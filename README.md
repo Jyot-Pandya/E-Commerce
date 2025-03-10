@@ -121,5 +121,4 @@ npm start
 - GET /api/orders - Get all orders (Admin only)
 - PUT /api/orders/:id/deliver - Update order to delivered (Admin only)
 
-## License
-MIT
+
