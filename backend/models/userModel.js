@@ -23,6 +23,16 @@ const userSchema = new mongoose.Schema(
       required: true,
       default: false,
     },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    githubId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
   },
   {
     timestamps: true,

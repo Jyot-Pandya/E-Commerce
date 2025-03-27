@@ -17,6 +17,7 @@ import UserListScreen from './screens/UserListScreen';
 import ProductListScreen from './screens/ProductListScreen';
 import ProductEditScreen from './screens/ProductEditScreen';
 import OrderListScreen from './screens/OrderListScreen';
+import OAuthCallbackScreen from './screens/OAuthCallbackScreen';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
               <Route path="/payment" element={<PaymentScreen />} />
               <Route path="/placeorder" element={<PlaceOrderScreen />} />
               <Route path="/order/:id" element={<OrderScreen />} />
+              <Route path="/oauth-callback" element={<OAuthCallbackScreen />} />
               <Route path="/admin/userlist" element={<UserListScreen />} />
               <Route path="/admin/productlist" element={<ProductListScreen />} />
               <Route path="/admin/productlist/:pageNumber" element={<ProductListScreen />} />
