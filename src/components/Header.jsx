@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../slices/userSlice';
 
 const Header = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
@@ -16,6 +18,22 @@ const Header = () => {
     navigate('/login');
   };
 
+  const toggleProfileDropdown = () => {
+    setProfileDropdownOpen(!profileDropdownOpen);
+    // Close admin dropdown when profile dropdown is opened
+    if (!profileDropdownOpen) {
+      setAdminDropdownOpen(false);
+    }
+  };
+
+  const toggleAdminDropdown = () => {
+    setAdminDropdownOpen(!adminDropdownOpen);
+    // Close profile dropdown when admin dropdown is opened
+    if (!adminDropdownOpen) {
+      setProfileDropdownOpen(false);
+    }
+  };
+
   const submitHandler = (e) => {
     e.preventDefault();
     if (searchKeyword.trim()) {
@@ -24,6 +42,22 @@ const Header = () => {
       navigate('/');
     }
   };
+
+  // Handle clicks outside the dropdowns
+  const handleClickOutside = (e) => {
+    if (!e.target.closest('.dropdown-container')) {
+      setProfileDropdownOpen(false);
+      setAdminDropdownOpen(false);
+    }
+  };
+
+  // Add event listener for outside clicks
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="bg-gray-800 text-white">
@@ -61,11 +95,14 @@ const Header = () => {
           </Link>
           
           {userInfo ? (
-            <div className="relative group ml-4">
-              <button className="px-3 py-2 flex items-center">
+            <div className="relative dropdown-container ml-4">
+              <button 
+                className="px-3 py-2 flex items-center"
+                onClick={toggleProfileDropdown}
+              >
                 {userInfo.name} <i className="fas fa-caret-down ml-1"></i>
               </button>
-              <div className="absolute right-0 w-48 bg-white rounded shadow-lg py-2 mt-1 invisible group-hover:visible z-10">
+              <div className={`absolute right-0 w-48 bg-white rounded shadow-lg py-2 mt-1 ${profileDropdownOpen ? 'block' : 'hidden'} z-10`}>
                 <Link
                   to="/profile"
                   className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
@@ -87,11 +124,14 @@ const Header = () => {
           )}
           
           {userInfo && userInfo.isAdmin && (
-            <div className="relative group ml-4">
-              <button className="px-3 py-2 flex items-center">
+            <div className="relative dropdown-container ml-4">
+              <button 
+                className="px-3 py-2 flex items-center"
+                onClick={toggleAdminDropdown}
+              >
                 Admin <i className="fas fa-caret-down ml-1"></i>
               </button>
-              <div className="absolute right-0 w-48 bg-white rounded shadow-lg py-2 mt-1 invisible group-hover:visible z-10">
+              <div className={`absolute right-0 w-48 bg-white rounded shadow-lg py-2 mt-1 ${adminDropdownOpen ? 'block' : 'hidden'} z-10`}>
                 <Link
                   to="/admin/userlist"
                   className="block px-4 py-2 text-gray-800 hover:bg-gray-200"

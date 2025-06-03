@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProducts } from '../slices/productSlice';
+import { 
+  fetchProducts, 
+  createProduct, 
+  resetCreateProduct, 
+  deleteProduct,
+  resetDeleteProduct
+} from '../slices/productSlice';
 import Loader from '../components/Loader';
-
-// Placeholder for product actions that would be in the productSlice
-const createProduct = () => ({ type: 'CREATE_PRODUCT' });
-const deleteProduct = (id) => ({ type: 'DELETE_PRODUCT', payload: id });
 
 const ProductListScreen = () => {
   const { pageNumber = 1 } = useParams();
@@ -14,19 +16,39 @@ const ProductListScreen = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  const { loading, error, products, page, pages } = useSelector(
-    (state) => state.product
-  );
+  const { 
+    loading, 
+    error, 
+    products, 
+    page, 
+    pages, 
+    successCreate, 
+    product: createdProductData, 
+    successDelete
+  } = useSelector((state) => state.product);
   
   const { userInfo } = useSelector((state) => state.user);
 
   useEffect(() => {
+    dispatch(resetCreateProduct());
+    dispatch(resetDeleteProduct());
+
     if (userInfo && userInfo.isAdmin) {
       dispatch(fetchProducts({ pageNumber }));
     } else {
       navigate('/login');
     }
   }, [dispatch, navigate, userInfo, pageNumber]);
+
+  useEffect(() => {
+    if (successCreate && createdProductData?._id) {
+      navigate(`/admin/product/${createdProductData._id}/edit`);
+    }
+    if (successDelete) {
+      alert('Product deleted successfully!');
+      dispatch(fetchProducts({ pageNumber }));
+    }
+  }, [successCreate, createdProductData, navigate, dispatch, successDelete, pageNumber]);
 
   const deleteHandler = (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {

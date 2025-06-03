@@ -7,6 +7,7 @@ const initialState = {
   loading: false,
   success: false,
   error: null,
+  successDeliver: false,
 };
 
 // Create order
@@ -127,6 +128,38 @@ export const listMyOrders = createAsyncThunk(
   }
 );
 
+// Deliver order
+export const deliverOrder = createAsyncThunk(
+  'order/deliverOrder',
+  async (orderId, { getState, rejectWithValue }) => {
+    try {
+      const {
+        user: { userInfo },
+      } = getState();
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+
+      const { data } = await axios.put(
+        `/api/orders/${orderId}/deliver`,
+        {},
+        config
+      );
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
 const orderSlice = createSlice({
   name: 'order',
   initialState,
@@ -140,6 +173,11 @@ const orderSlice = createSlice({
     resetOrderPay: (state) => {
       state.loading = false;
       state.success = false;
+      state.error = null;
+    },
+    resetOrderDeliver: (state) => {
+      state.loading = false;
+      state.successDeliver = false;
       state.error = null;
     },
   },
@@ -183,6 +221,19 @@ const orderSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      // Deliver order
+      .addCase(deliverOrder.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deliverOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        state.successDeliver = true;
+        state.order = action.payload;
+      })
+      .addCase(deliverOrder.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       // List my orders
       .addCase(listMyOrders.pending, (state) => {
         state.loading = true;
@@ -198,6 +249,6 @@ const orderSlice = createSlice({
   },
 });
 
-export const { resetOrder, resetOrderPay } = orderSlice.actions;
+export const { resetOrder, resetOrderPay, resetOrderDeliver } = orderSlice.actions;
 
 export default orderSlice.reducer; 

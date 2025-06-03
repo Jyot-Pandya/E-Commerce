@@ -1,34 +1,35 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { getUsers, deleteUser, resetDeleteUser } from '../slices/userSlice';
 import Loader from '../components/Loader';
-
-// Placeholder for user list actions that would be in the userSlice
-const getUsers = () => ({ type: 'GET_USERS' });
-const deleteUser = (id) => ({ type: 'DELETE_USER', payload: id });
 
 const UserListScreen = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  // Placeholder data (in a real app this would come from Redux state)
-  const loading = false;
-  const error = null;
-  const users = [
-    { _id: '1', name: 'John Doe', email: 'john@example.com', isAdmin: false },
-    { _id: '2', name: 'Jane Smith', email: 'jane@example.com', isAdmin: false },
-    { _id: '3', name: 'Admin User', email: 'admin@example.com', isAdmin: true },
-  ];
+  const { loading, error, users, successDelete } = useSelector(
+    (state) => state.user
+  );
   
   const { userInfo } = useSelector((state) => state.user);
 
   useEffect(() => {
+    dispatch(resetDeleteUser());
+
     if (userInfo && userInfo.isAdmin) {
       dispatch(getUsers());
     } else {
       navigate('/login');
     }
   }, [dispatch, navigate, userInfo]);
+
+  useEffect(() => {
+    if (successDelete) {
+      alert('User deleted successfully!');
+      dispatch(getUsers());
+    }
+  }, [successDelete, dispatch]);
 
   const deleteHandler = (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {

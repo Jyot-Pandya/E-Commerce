@@ -57,12 +57,18 @@ app.post('/api/payment', async (req, res) => {
   }
 });
 
+// Serve static assets in both development and production
+app.use(express.static(path.join(__dirname, '../dist')));
+
 // Serve static assets if in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../build')));
-  
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../build', 'index.html'));
+    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
+  });
+} else {
+  // Handle SPA routing in development mode
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
   });
 }
 
@@ -73,7 +79,11 @@ app.use(errorHandler);
 // Port configuration
 const PORT = process.env.PORT || 5000;
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}); 
+// Start server only if this file is run directly
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app; 

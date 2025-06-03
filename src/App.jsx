@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import store from './store';
 import Header from './components/Header';
@@ -14,6 +14,7 @@ import PaymentScreen from './screens/PaymentScreen';
 import PlaceOrderScreen from './screens/PlaceOrderScreen';
 import OrderScreen from './screens/OrderScreen';
 import UserListScreen from './screens/UserListScreen';
+import UserEditScreen from './screens/UserEditScreen';
 import ProductListScreen from './screens/ProductListScreen';
 import ProductEditScreen from './screens/ProductEditScreen';
 import OrderListScreen from './screens/OrderListScreen';
@@ -43,6 +44,7 @@ function App() {
               <Route path="/order/:id" element={<OrderScreen />} />
               <Route path="/oauth-callback" element={<OAuthCallbackScreen />} />
               <Route path="/admin/userlist" element={<UserListScreen />} />
+              <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />
               <Route path="/admin/productlist" element={<ProductListScreen />} />
               <Route path="/admin/productlist/:pageNumber" element={<ProductListScreen />} />
               <Route path="/admin/product/:id/edit" element={<ProductEditScreen />} />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { getOrderDetails, payOrder, resetOrderPay } from '../slices/orderSlice';
+import { getOrderDetails, payOrder, deliverOrder, resetOrderPay, resetOrderDeliver } from '../slices/orderSlice';
 import Loader from '../components/Loader';
 import axios from 'axios';
 
@@ -11,7 +11,7 @@ const OrderScreen = () => {
   
   const [sdkReady, setSdkReady] = useState(false);
   
-  const { order, loading, error } = useSelector((state) => state.order);
+  const { order, loading, error, successDeliver } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.user);
   
   // Calculate prices
@@ -35,8 +35,9 @@ const OrderScreen = () => {
       document.body.appendChild(script);
     };
 
-    if (!order || order._id !== id) {
+    if (!order || order._id !== id || successDeliver) {
       dispatch(resetOrderPay());
+      dispatch(resetOrderDeliver());
       dispatch(getOrderDetails(id));
     } else if (!order.isPaid) {
       if (!window.paypal) {
@@ -45,10 +46,14 @@ const OrderScreen = () => {
         setSdkReady(true);
       }
     }
-  }, [dispatch, id, order]);
+  }, [dispatch, id, order, successDeliver]);
 
   const successPaymentHandler = (paymentResult) => {
     dispatch(payOrder({ orderId: id, paymentResult }));
+  };
+
+  const deliverHandler = () => {
+    dispatch(deliverOrder(id));
   };
 
   return loading ? (
@@ -192,6 +197,7 @@ const OrderScreen = () => {
                 <button
                   type="button"
                   className="w-full mt-4 bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700"
+                  onClick={deliverHandler}
                 >
                   Mark As Delivered
                 </button>

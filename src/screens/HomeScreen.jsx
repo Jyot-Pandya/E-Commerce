@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { fetchProducts } from '../slices/productSlice';
 import Product from '../components/Product';
 import Loader from '../components/Loader';
+import ProductCarousel from '../components/ProductCarousel';
 
 const HomeScreen = () => {
   const dispatch = useDispatch();
@@ -19,6 +20,8 @@ const HomeScreen = () => {
 
   return (
     <div>
+      {!keyword && <ProductCarousel />}
+      
       <h1 className="text-3xl font-bold mb-6">Latest Products</h1>
       
       {loading ? (
