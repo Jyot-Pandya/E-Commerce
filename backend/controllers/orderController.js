@@ -1,4 +1,6 @@
 const Order = require('../models/orderModel');
+const Papa = require('papaparse');
+const PDFDocument = require('pdfkit');
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -136,6 +138,99 @@ const getOrders = async (req, res) => {
   }
 };
 
+// @desc    Export orders to CSV
+// @route   GET /api/orders/export/csv
+// @access  Private/Admin
+const exportOrdersToCsv = async (req, res) => {
+  try {
+    const orders = await Order.find({}).populate('user', 'name email');
+    
+    const data = orders.map(order => ({
+      ID: order._id,
+      User: order.user ? order.user.name : 'N/A',
+      Email: order.user ? order.user.email : 'N/A',
+      Date: order.createdAt.toDateString(),
+      Total: order.totalPrice,
+      Paid: order.isPaid ? 'Yes' : 'No',
+      Delivered: order.isDelivered ? 'Yes' : 'No',
+    }));
+
+    const csv = Papa.unparse(data);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment('orders.csv');
+    res.send(csv);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Generate PDF invoice for an order
+// @route   GET /api/orders/:id/invoice
+// @access  Private
+const generateInvoice = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('user', 'name email');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${order._id}.pdf`);
+
+    doc.pipe(res);
+
+    // Header
+    doc.fontSize(20).text('Invoice', { align: 'center' });
+    doc.moveDown();
+
+    // Order Details
+    doc.fontSize(12).text(`Order ID: ${order._id}`);
+    doc.text(`Date: ${order.createdAt.toDateString()}`);
+    doc.moveDown();
+
+    // User Details
+    doc.text(`Billed To:`);
+    doc.text(order.user.name);
+    doc.text(order.user.email);
+    doc.text(order.shippingAddress.address);
+    doc.text(`${order.shippingAddress.city}, ${order.shippingAddress.postalCode}`);
+    doc.text(order.shippingAddress.country);
+    doc.moveDown();
+
+    // Items Table
+    doc.font('Helvetica-Bold').text('Item');
+    doc.text('Qty', 250, doc.y, { width: 50, align: 'right' });
+    doc.text('Price', 300, doc.y, { width: 100, align: 'right' });
+    doc.text('Total', 400, doc.y, { width: 100, align: 'right' });
+    doc.moveDown();
+    doc.font('Helvetica');
+
+    order.orderItems.forEach(item => {
+      doc.text(item.name);
+      doc.text(item.qty, 250, doc.y, { width: 50, align: 'right' });
+      doc.text(`$${item.price.toFixed(2)}`, 300, doc.y, { width: 100, align: 'right' });
+      doc.text(`$${(item.qty * item.price).toFixed(2)}`, 400, doc.y, { width: 100, align: 'right' });
+      doc.moveDown();
+    });
+
+    // Summary
+    doc.moveDown();
+    doc.font('Helvetica-Bold');
+    doc.text(`Subtotal: $${order.itemsPrice.toFixed(2)}`, { align: 'right' });
+    doc.text(`Tax: $${order.taxPrice.toFixed(2)}`, { align: 'right' });
+    doc.text(`Shipping: $${order.shippingPrice.toFixed(2)}`, { align: 'right' });
+    doc.text(`Total: $${order.totalPrice.toFixed(2)}`, { align: 'right' });
+
+    doc.end();
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   addOrderItems,
   getOrderById,
@@ -143,4 +238,6 @@ module.exports = {
   updateOrderToDelivered,
   getMyOrders,
   getOrders,
+  exportOrdersToCsv,
+  generateInvoice,
 }; 

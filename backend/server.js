@@ -12,6 +12,7 @@ const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '.env') });
@@ -32,30 +33,16 @@ app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+
+app.get('/api/config/razorpay', (req, res) =>
+  res.send({ clientId: process.env.RAZORPAY_KEY_ID })
+);
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
-
-// Payment route with Stripe
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-app.post('/api/payment', async (req, res) => {
-  try {
-    const { amount, token } = req.body;
-    
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'usd',
-      payment_method_types: ['card'],
-      description: 'E-commerce purchase',
-    });
-    
-    res.json({ clientSecret: paymentIntent.client_secret });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 // Serve static assets in both development and production
 app.use(express.static(path.join(__dirname, '../dist')));

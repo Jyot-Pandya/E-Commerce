@@ -16,9 +16,15 @@ const getProducts = async (req, res) => {
           },
         }
       : {};
+    
+    // Handle category filter
+    const category = req.query.category ? { category: req.query.category } : {};
+    
+    // Combine filters
+    const filters = { ...keyword, ...category };
 
-    const count = await Product.countDocuments({ ...keyword });
-    const products = await Product.find({ ...keyword })
+    const count = await Product.countDocuments(filters);
+    const products = await Product.find(filters)
       .limit(pageSize)
       .skip(pageSize * (page - 1));
 
@@ -183,6 +189,40 @@ const getTopProducts = async (req, res) => {
   }
 };
 
+// @desc    Get all product categories
+// @route   GET /api/products/categories
+// @access  Public
+const getProductCategories = async (req, res) => {
+  try {
+    const categories = await Product.distinct('category');
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get product recommendations
+// @route   GET /api/products/:id/recommendations
+// @access  Public
+const getProductRecommendations = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const recommendations = await Product.find({
+      category: product.category,
+      _id: { $ne: product._id },
+    }).limit(4);
+
+    res.json(recommendations);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -191,4 +231,6 @@ module.exports = {
   updateProduct,
   createProductReview,
   getTopProducts,
+  getProductCategories,
+  getProductRecommendations,
 }; 

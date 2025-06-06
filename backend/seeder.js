@@ -33,7 +33,7 @@ const importData = async () => {
 
     // Add user reference to products
     const sampleProducts = products.map(product => {
-      return { ...product, user: adminUser };
+      return { ...product, user: adminUser, price: Math.floor(Math.random() * 1000) + 1 };
     });
 
     // Insert products
