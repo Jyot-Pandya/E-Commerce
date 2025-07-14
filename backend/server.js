@@ -42,6 +42,15 @@ app.get('/api/config/razorpay', (req, res) =>
 );
 
 // MongoDB connection
+console.log('Attempting to connect to MongoDB...');
+if (process.env.MONGO_URI && process.env.MONGO_URI.includes('@')) {
+    // Logs the URI but masks the password for security
+    const maskedUri = process.env.MONGO_URI.replace(/:([^:]*)@/, ':*****@');
+    console.log(`Using MONGO_URI: ${maskedUri}`);
+} else {
+    console.log('MONGO_URI is not set or is in an unexpected format.');
+}
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
