@@ -21,6 +21,8 @@ const HomeScreen = () => {
 
   const productsLoadable = useRecoilValueLoadable(productsQuery({ keyword, pageNumber, category: selectedCategory }));
   const { state, contents } = productsLoadable;
+  console.log('productsLoadable state:', state);
+  console.log('productsLoadable contents:', contents);
   const { products, page, pages } = state === 'hasValue' ? contents : { products: [], page: 1, pages: 1 };
   const loading = state === 'loading';
   const error = state === 'hasError' ? contents : null;
