@@ -41,7 +41,7 @@ const ProductCarousel = () => {
                   </span>
                   <span>{product.rating} ({product.numReviews} reviews)</span>
                 </div>
-                <p className="mt-2 font-bold">${product.price.toFixed(2)}</p>
+                <p className="mt-2 font-bold">₹{product.price.toFixed(2)}</p>
               </div>
             </Link>
           </div>

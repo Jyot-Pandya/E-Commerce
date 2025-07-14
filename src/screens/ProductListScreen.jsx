@@ -115,7 +115,7 @@ const ProductListScreen = () => {
                         {product.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        ${product.price}
+                        ₹{product.price}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {product.category}

@@ -1,61 +1,53 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { getOrders } from '../slices/orderSlice';
 import Loader from '../components/Loader';
-
-// Placeholder for order list actions that would be in the orderSlice
-const listOrders = () => ({ type: 'LIST_ORDERS' });
+import { Button } from '@/components/ui/button';
+import axios from 'axios';
 
 const OrderListScreen = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  // Placeholder data (in a real app this would come from Redux state)
-  const loading = false;
-  const error = null;
-  const orders = [
-    {
-      _id: '1',
-      user: { name: 'John Doe' },
-      createdAt: '2023-01-01T12:00:00Z',
-      totalPrice: 99.99,
-      isPaid: true,
-      paidAt: '2023-01-02T12:00:00Z',
-      isDelivered: false,
-    },
-    {
-      _id: '2',
-      user: { name: 'Jane Smith' },
-      createdAt: '2023-01-03T12:00:00Z',
-      totalPrice: 129.99,
-      isPaid: true,
-      paidAt: '2023-01-04T12:00:00Z',
-      isDelivered: true,
-      deliveredAt: '2023-01-05T12:00:00Z',
-    },
-    {
-      _id: '3',
-      user: { name: 'Sam Wilson' },
-      createdAt: '2023-01-06T12:00:00Z',
-      totalPrice: 149.99,
-      isPaid: false,
-      isDelivered: false,
-    },
-  ];
-  
+  const { orders, loading, error } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.user);
 
   useEffect(() => {
     if (userInfo && userInfo.isAdmin) {
-      dispatch(listOrders());
+      dispatch(getOrders());
     } else {
       navigate('/login');
     }
   }, [dispatch, navigate, userInfo]);
 
+  const exportHandler = async () => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+        responseType: 'blob',
+      };
+      const { data } = await axios.get('/api/orders/export/csv', config);
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'orders.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Orders</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Orders</h1>
+        <Button onClick={exportHandler}>Export to CSV</Button>
+      </div>
       
       {loading ? (
         <Loader />
@@ -93,19 +85,19 @@ const OrderListScreen = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {orders.map((order) => (
+                {orders && orders.map((order) => (
                   <tr key={order._id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {order._id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {order.user.name}
+                      {order.user && order.user.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      ${order.totalPrice}
+                      ₹{order.totalPrice}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {order.isPaid ? (
@@ -128,9 +120,8 @@ const OrderListScreen = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link
                         to={`/order/${order._id}`}
-                        className="bg-gray-800 text-white py-1 px-3 rounded hover:bg-gray-700"
                       >
-                        Details
+                        <Button variant="outline">Details</Button>
                       </Link>
                     </td>
                   </tr>

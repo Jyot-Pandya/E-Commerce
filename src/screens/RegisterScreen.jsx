@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, clearError } from '../slices/userSlice';
 import Loader from '../components/Loader';
+import { Button } from '@/components/ui/button';
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
@@ -120,12 +121,9 @@ const RegisterScreen = () => {
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700"
-          >
+          <Button type="submit" className="w-full">
             Register
-          </button>
+          </Button>
         </form>
 
         <div className="mt-4 text-center">

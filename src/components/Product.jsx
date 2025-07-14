@@ -1,42 +1,32 @@
-import { Link } from 'react-router-dom';
-import Rating from './Rating';
+import { useDispatch } from 'react-redux';
+import { addCartItem } from '../slices/cartSlice';
+import { ProductCard } from '@/components/ui/product-card';
 
 const Product = ({ product }) => {
+  const dispatch = useDispatch();
+
+  const addToCartHandler = () => {
+    dispatch(addCartItem({ 
+      product: product._id,
+      name: product.name,
+      image: product.image,
+      price: product.price,
+      countInStock: product.countInStock,
+      qty: 1
+    }));
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <Link to={`/product/${product._id}`}>
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-64 object-cover"
-        />
-      </Link>
-      
-      <div className="p-4">
-        <Link to={`/product/${product._id}`}>
-          <h2 className="text-lg font-semibold mb-2 h-14 overflow-hidden">
-            {product.name}
-          </h2>
-        </Link>
-        
-        <div className="mb-2">
-          <Rating
-            value={product.rating}
-            text={`${product.numReviews} reviews`}
-          />
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-bold">${product.price.toFixed(2)}</h3>
-          <Link
-            to={`/product/${product._id}`}
-            className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
-          >
-            View Details
-          </Link>
-        </div>
-      </div>
-    </div>
+    <ProductCard
+      product={{
+        ...product,
+        discount: product.discount || 0,
+        description: product.description || 'No description available'
+      }}
+      onAddToCart={addToCartHandler}
+      variant="default"
+      animation="hover"
+    />
   );
 };
 

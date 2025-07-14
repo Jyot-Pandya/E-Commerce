@@ -160,6 +160,34 @@ export const deliverOrder = createAsyncThunk(
   }
 );
 
+// Get all orders (admin)
+export const getOrders = createAsyncThunk(
+  'order/getOrders',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const {
+        user: { userInfo },
+      } = getState();
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+
+      const { data } = await axios.get('/api/orders', config);
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
 const orderSlice = createSlice({
   name: 'order',
   initialState,
@@ -243,6 +271,18 @@ const orderSlice = createSlice({
         state.orders = action.payload;
       })
       .addCase(listMyOrders.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Get all orders
+      .addCase(getOrders.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getOrders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.orders = action.payload;
+      })
+      .addCase(getOrders.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

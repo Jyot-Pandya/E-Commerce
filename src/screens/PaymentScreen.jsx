@@ -1,25 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { savePaymentMethod } from '../slices/cartSlice';
+import { Button } from '@/components/ui/button';
 
 const PaymentScreen = () => {
-  const { shippingAddress } = useSelector((state) => state.cart);
-  
-  const [paymentMethod, setPaymentMethod] = useState('Credit Card');
-  
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (!shippingAddress.address) {
-      navigate('/shipping');
-    }
-  }, [navigate, shippingAddress]);
+  // Set Razorpay as the default and only payment method
+  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
 
   const submitHandler = (e) => {
     e.preventDefault();
-    
     dispatch(savePaymentMethod(paymentMethod));
     navigate('/placeorder');
   };
@@ -27,60 +20,32 @@ const PaymentScreen = () => {
   return (
     <div className="flex justify-center">
       <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6">Payment Method</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center">Payment Method</h1>
         
         <form onSubmit={submitHandler} className="bg-white p-6 rounded-lg shadow-md">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-4">Select Method</h2>
-            
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="creditCard"
-                  name="paymentMethod"
-                  value="Credit Card"
-                  checked={paymentMethod === 'Credit Card'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="mr-2"
-                />
-                <label htmlFor="creditCard">Credit or Debit Card</label>
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="paypal"
-                  name="paymentMethod"
-                  value="PayPal"
-                  checked={paymentMethod === 'PayPal'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="mr-2"
-                />
-                <label htmlFor="paypal">PayPal</label>
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="stripe"
-                  name="paymentMethod"
-                  value="Stripe"
-                  checked={paymentMethod === 'Stripe'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="mr-2"
-                />
-                <label htmlFor="stripe">Stripe</label>
-              </div>
+            <p className="text-gray-700 mb-2">
+              You will be redirected to Razorpay to complete your payment.
+            </p>
+            <div className="border rounded p-4 bg-gray-50">
+              <input
+                type="radio"
+                id="razorpay"
+                name="paymentMethod"
+                value="Razorpay"
+                checked
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="mr-2"
+              />
+              <label htmlFor="razorpay" className="font-medium">
+                Razorpay
+              </label>
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700"
-          >
+          <Button type="submit" className="w-full">
             Continue
-          </button>
+          </Button>
         </form>
       </div>
     </div>

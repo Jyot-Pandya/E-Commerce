@@ -1,60 +1,116 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { getOrderDetails, payOrder, deliverOrder, resetOrderPay, resetOrderDeliver } from '../slices/orderSlice';
+import {
+  getOrderDetails,
+  payOrder,
+  deliverOrder,
+  resetOrderPay,
+  resetOrderDeliver,
+} from '../slices/orderSlice';
 import Loader from '../components/Loader';
 import axios from 'axios';
+import { Button } from '@/components/ui/button';
 
 const OrderScreen = () => {
-  const { id } = useParams();
+  const { id: orderId } = useParams();
   const dispatch = useDispatch();
-  
-  const [sdkReady, setSdkReady] = useState(false);
-  
-  const { order, loading, error, successDeliver } = useSelector((state) => state.order);
+
+  const {
+    order,
+    loading,
+    error,
+    success: successPay,
+    loading: loadingPay,
+    successDeliver,
+  } = useSelector((state) => state.order);
   const { userInfo } = useSelector((state) => state.user);
-  
-  // Calculate prices
-  if (!loading && order) {
-    order.itemsPrice = order.orderItems.reduce(
-      (acc, item) => acc + item.price * item.qty,
-      0
-    ).toFixed(2);
-  }
 
   useEffect(() => {
-    const addPayPalScript = async () => {
-      const { data: clientId } = await axios.get('/api/config/paypal');
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}`;
-      script.async = true;
-      script.onload = () => {
-        setSdkReady(true);
-      };
-      document.body.appendChild(script);
-    };
-
-    if (!order || order._id !== id || successDeliver) {
+    if (!order || order._id !== orderId || successPay || successDeliver) {
       dispatch(resetOrderPay());
       dispatch(resetOrderDeliver());
-      dispatch(getOrderDetails(id));
-    } else if (!order.isPaid) {
-      if (!window.paypal) {
-        addPayPalScript();
-      } else {
-        setSdkReady(true);
-      }
+      dispatch(getOrderDetails(orderId));
     }
-  }, [dispatch, id, order, successDeliver]);
+  }, [dispatch, orderId, successPay, successDeliver, order]);
 
-  const successPaymentHandler = (paymentResult) => {
-    dispatch(payOrder({ orderId: id, paymentResult }));
+  const paymentHandler = async () => {
+    try {
+      const { data: razorpayKey } = await axios.get('/api/config/razorpay');
+
+      const { data: orderData } = await axios.post(
+        '/api/payment/create-order',
+        {
+          amount: order.totalPrice,
+          currency: 'INR',
+        },
+        { headers: { Authorization: `Bearer ${userInfo.token}` } }
+      );
+
+      const options = {
+        key: razorpayKey.clientId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'ProShop',
+        description: 'Payment for your order',
+        order_id: orderData.id,
+        handler: function (response) {
+          const paymentResult = {
+            id: response.razorpay_payment_id,
+            status: 'completed',
+            update_time: new Date().toISOString(),
+            payer: { email_address: userInfo.email },
+          };
+          dispatch(payOrder({ orderId, paymentResult }));
+        },
+        prefill: {
+          name: userInfo.name,
+          email: userInfo.email,
+        },
+        theme: {
+          color: '#3399cc',
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error('Payment failed', error);
+    }
   };
 
   const deliverHandler = () => {
-    dispatch(deliverOrder(id));
+    dispatch(deliverOrder(orderId));
   };
+
+  const downloadInvoiceHandler = async () => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+        responseType: 'blob',
+      };
+      const { data } = await axios.get(`/api/orders/${orderId}/invoice`, config);
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice-${orderId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  
+  if (!order) {
+    return <Loader />;
+  }
+
+  order.itemsPrice = order.orderItems
+    .reduce((acc, item) => acc + item.price * item.qty, 0)
+    .toFixed(2);
 
   return loading ? (
     <Loader />
@@ -68,8 +124,7 @@ const OrderScreen = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          {/* Shipping */}
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+           <div className="bg-white p-6 rounded-lg shadow-md mb-6">
             <h2 className="text-xl font-semibold mb-3">Shipping</h2>
             <p className="mb-2">
               <strong>Name: </strong> {order.user.name}
@@ -99,7 +154,6 @@ const OrderScreen = () => {
             )}
           </div>
           
-          {/* Payment Method */}
           <div className="bg-white p-6 rounded-lg shadow-md mb-6">
             <h2 className="text-xl font-semibold mb-3">Payment Method</h2>
             <p className="mb-2">
@@ -117,7 +171,6 @@ const OrderScreen = () => {
             )}
           </div>
           
-          {/* Order Items */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-3">Order Items</h2>
             
@@ -141,7 +194,7 @@ const OrderScreen = () => {
                     </Link>
                     
                     <div>
-                      {item.qty} x ${item.price} = ${(item.qty * item.price).toFixed(2)}
+                      {item.qty} x ₹{item.price} = ₹{(item.qty * item.price).toFixed(2)}
                     </div>
                   </div>
                 </div>
@@ -149,8 +202,7 @@ const OrderScreen = () => {
             </div>
           </div>
         </div>
-        
-        {/* Order Summary */}
+
         <div className="lg:col-span-1">
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4 border-b pb-2">
@@ -160,48 +212,58 @@ const OrderScreen = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Items:</span>
-                <span>${order.itemsPrice}</span>
+                <span>₹{order.itemsPrice}</span>
               </div>
               
               <div className="flex justify-between">
                 <span>Shipping:</span>
-                <span>${order.shippingPrice}</span>
+                <span>₹{order.shippingPrice}</span>
               </div>
               
               <div className="flex justify-between">
                 <span>Tax:</span>
-                <span>${order.taxPrice}</span>
+                <span>₹{order.taxPrice}</span>
               </div>
               
               <div className="flex justify-between font-bold border-t pt-2 mt-2">
                 <span>Total:</span>
-                <span>${order.totalPrice}</span>
+                <span>₹{order.totalPrice}</span>
               </div>
-              
+
+              {order.isPaid && (
+                <div className="mt-4">
+                  <Button onClick={downloadInvoiceHandler} className="w-full">
+                    Download Invoice
+                  </Button>
+                </div>
+              )}
+
               {!order.isPaid && (
                 <div className="mt-4">
-                  {!sdkReady ? (
-                    <Loader />
-                  ) : (
-                    <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded text-center">
-                      PayPal SDK Loading...
-                      <p className="text-sm mt-2">
-                        (In a real app, the PayPal payment button would appear here)
-                      </p>
-                    </div>
+                  {loadingPay && <Loader />}
+                  {!loadingPay && (
+                    <Button
+                      onClick={paymentHandler}
+                      className="w-full"
+                    >
+                      Pay with Razorpay
+                    </Button>
                   )}
                 </div>
               )}
               
-              {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (
-                <button
-                  type="button"
-                  className="w-full mt-4 bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700"
-                  onClick={deliverHandler}
-                >
-                  Mark As Delivered
-                </button>
-              )}
+              {userInfo &&
+                userInfo.isAdmin &&
+                order.isPaid &&
+                !order.isDelivered && (
+                  <Button
+                    type="button"
+                    className="w-full mt-4"
+                    onClick={deliverHandler}
+                  >
+                    Mark As Delivered
+                  </Button>
+                )}
             </div>
           </div>
         </div>

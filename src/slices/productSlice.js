@@ -5,6 +5,7 @@ const initialState = {
   products: [],
   product: { reviews: [] },
   topProducts: [],
+  categories: [],
   loading: false,
   error: null,
   page: 1,
@@ -18,10 +19,10 @@ const initialState = {
 // Fetch all products
 export const fetchProducts = createAsyncThunk(
   'product/fetchProducts',
-  async ({ keyword = '', pageNumber = '' }, { rejectWithValue }) => {
+  async ({ keyword = '', pageNumber = '', category = '' }, { rejectWithValue }) => {
     try {
       const { data } = await axios.get(
-        `/api/products?keyword=${keyword}&pageNumber=${pageNumber}`
+        `/api/products?keyword=${keyword}&pageNumber=${pageNumber}${category ? `&category=${category}` : ''}`
       );
       return data;
     } catch (error) {
@@ -183,6 +184,23 @@ export const fetchTopProducts = createAsyncThunk(
   }
 );
 
+// Fetch product categories
+export const fetchCategories = createAsyncThunk(
+  'product/fetchCategories',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.get('/api/products/categories');
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  }
+);
+
 const productSlice = createSlice({
   name: 'product',
   initialState,
@@ -298,6 +316,18 @@ const productSlice = createSlice({
         state.topProducts = action.payload;
       })
       .addCase(fetchTopProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch categories
+      .addCase(fetchCategories.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchCategories.fulfilled, (state, action) => {
+        state.loading = false;
+        state.categories = action.payload;
+      })
+      .addCase(fetchCategories.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

@@ -4,12 +4,22 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { fetchProductDetails, createProductReview, resetCreateReview } from '../slices/productSlice';
 import { addCartItem } from '../slices/cartSlice';
 import Rating from '../components/Rating';
-import Loader from '../components/Loader';
+import Product from '../components/Product';
+import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Skeleton, SkeletonProduct } from '@/components/ui/skeleton';
+import { useToast, ToastProvider } from '@/components/ui/toast';
+import { FaShoppingCart, FaHeart, FaShare, FaStar, FaRegStar, FaArrowLeft } from 'react-icons/fa';
 
 const ProductScreen = () => {
   const [qty, setQty] = useState(1);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
+  const [recommendations, setRecommendations] = useState([]);
+  const [activeImage, setActiveImage] = useState(null);
   
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -22,8 +32,24 @@ const ProductScreen = () => {
   const { userInfo } = useSelector((state) => state.user);
 
   useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        const { data } = await axios.get(`/api/products/${id}/recommendations`);
+        setRecommendations(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
     dispatch(fetchProductDetails(id));
+    fetchRecommendations();
   }, [dispatch, id]);
+
+  useEffect(() => {
+    if (product && product.image) {
+      setActiveImage(product.image);
+    }
+  }, [product]);
 
   useEffect(() => {
     if (success) {
@@ -57,153 +83,292 @@ const ProductScreen = () => {
     );
   };
 
+  const renderStars = (count) => {
+    return (
+      <div className="flex">
+        {[...Array(5)].map((_, i) => (
+          <span 
+            key={i} 
+            className="cursor-pointer text-xl"
+            onClick={() => setRating(i + 1)}
+          >
+            {i < count ? 
+              <FaStar className="text-yellow-500" /> : 
+              <FaRegStar className="text-gray-400" />
+            }
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div>
-      <Link to="/" className="inline-block mb-4 text-gray-600 hover:text-gray-800">
-        <i className="fas fa-arrow-left mr-2"></i> Back to Products
-      </Link>
+    <div className="animate-fade-in">
+      <Button
+        variant="ghost"
+        className="mb-6 group"
+        onClick={() => navigate(-1)}
+      >
+        <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" /> 
+        Back to Products
+      </Button>
       
       {loading ? (
-        <Loader />
+        <SkeletonProduct />
       ) : error ? (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div className="bg-destructive/10 border border-destructive text-destructive px-6 py-4 rounded-lg animate-slide-in-bottom">
           {error}
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-            {/* Product Image */}
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {/* Product Images */}
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-lg shadow-md bg-white p-2">
+                <img
+                  src={activeImage || product.image}
+                  alt={product.name}
+                  className="w-full h-[400px] object-contain transition-transform hover:scale-105"
+                />
+              </div>
+              
+              {/* Thumbnail gallery - would be used if product had multiple images */}
+              {product.images && product.images.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  <div 
+                    className={`w-20 h-20 rounded-md cursor-pointer border-2 ${activeImage === product.image ? 'border-primary' : 'border-transparent'}`}
+                    onClick={() => setActiveImage(product.image)}
+                  >
               <img
                 src={product.image}
                 alt={product.name}
-                className="w-full rounded-lg shadow-md"
+                      className="w-full h-full object-cover rounded"
+                    />
+                  </div>
+                  {product.images.map((img, idx) => (
+                    <div 
+                      key={idx}
+                      className={`w-20 h-20 rounded-md cursor-pointer border-2 ${activeImage === img ? 'border-primary' : 'border-transparent'}`}
+                      onClick={() => setActiveImage(img)}
+                    >
+                      <img 
+                        src={img} 
+                        alt={`${product.name} ${idx + 1}`} 
+                        className="w-full h-full object-cover rounded"
               />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             
             {/* Product Info */}
+            <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-bold mb-4">{product.name}</h1>
-              <div className="mb-4">
+                <div className="flex justify-between items-start">
+                  <h1 className="text-3xl font-bold">{product.name}</h1>
+                  <Badge 
+                    variant={product.countInStock > 0 ? "success" : "destructive"}
+                    animation="pulse"
+                  >
+                    {product.countInStock > 0 ? 'In Stock' : 'Out of Stock'}
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center mt-2">
                 <Rating
                   value={product.rating}
                   text={`${product.numReviews} reviews`}
                 />
               </div>
-              <p className="text-xl font-bold mb-4">Price: ${product.price}</p>
-              <p className="mb-4">{product.description}</p>
+              </div>
+              
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-primary">₹{product.price}</span>
+                {product.discount > 0 && (
+                  <>
+                    <span className="text-lg text-muted-foreground line-through">
+                      ₹{(product.price / (1 - product.discount / 100)).toFixed(2)}
+                    </span>
+                    <Badge variant="destructive">
+                      {product.discount}% OFF
+                    </Badge>
+                  </>
+                )}
+              </div>
+              
+              <div className="border-t border-b py-4">
+                <p className="text-muted-foreground">{product.description}</p>
+              </div>
+              
+              <div className="flex gap-4">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  leftIcon={<FaHeart />}
+                >
+                  Wishlist
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  leftIcon={<FaShare />}
+                >
+                  Share
+                </Button>
+              </div>
             </div>
             
             {/* Add to Cart */}
-            <div className="bg-white p-4 rounded-lg shadow-md">
-              <div className="mb-4 flex justify-between">
-                <span>Price:</span>
-                <span className="font-bold">${product.price}</span>
+            <Card variant="raised" animation="hover" className="h-fit">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Price:</span>
+                  <span className="font-bold text-lg">₹{product.price}</span>
               </div>
               
-              <div className="mb-4 flex justify-between">
-                <span>Status:</span>
-                <span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Status:</span>
+                  <Badge variant={product.countInStock > 0 ? "success" : "destructive"}>
                   {product.countInStock > 0 ? 'In Stock' : 'Out of Stock'}
-                </span>
+                  </Badge>
               </div>
               
               {product.countInStock > 0 && (
-                <div className="mb-4 flex justify-between">
-                  <span>Qty:</span>
-                  <select
-                    value={qty}
-                    onChange={(e) => setQty(e.target.value)}
-                    className="border rounded p-2"
-                  >
-                    {[...Array(product.countInStock).keys()].map((x) => (
-                      <option key={x + 1} value={x + 1}>
-                        {x + 1}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Quantity:</span>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => qty > 1 && setQty(qty - 1)}
+                        disabled={qty <= 1}
+                      >
+                        -
+                      </Button>
+                      <span className="w-8 text-center">{qty}</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => qty < product.countInStock && setQty(qty + 1)}
+                        disabled={qty >= product.countInStock}
+                      >
+                        +
+                      </Button>
+                    </div>
                 </div>
               )}
               
-              <button
+                <div className="pt-4">
+              <Button
                 onClick={addToCartHandler}
-                className="w-full bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700 disabled:bg-gray-400"
+                className="w-full"
+                    size="lg"
                 disabled={product.countInStock === 0}
+                    leftIcon={<FaShoppingCart />}
               >
-                Add to Cart
-              </button>
+                    {product.countInStock === 0 ? 'Out of Stock' : 'Add to Cart'}
+              </Button>
             </div>
+              </CardContent>
+            </Card>
           </div>
           
-          {/* Reviews */}
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-4">Reviews</h2>
-            
-            {product.reviews.length === 0 ? (
-              <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-6">
-                No Reviews
-              </div>
-            ) : (
-              <div className="mb-6">
-                {product.reviews.map((review) => (
-                  <div key={review._id} className="border-b pb-4 mb-4">
-                    <div className="font-bold">{review.name}</div>
-                    <Rating value={review.rating} />
-                    <p className="text-gray-600 text-sm">
-                      {review.createdAt.substring(0, 10)}
-                    </p>
-                    <p className="mt-2">{review.comment}</p>
-                  </div>
+          {/* Recommendations */}
+          {recommendations.length > 0 && (
+            <div className="mt-16 animate-slide-in-bottom">
+              <h2 className="text-2xl font-bold mb-6">You might also like</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {recommendations.map((rec) => (
+                  <Product key={rec._id} product={rec} />
                 ))}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Reviews */}
+          <div className="mt-16 animate-slide-in-bottom">
+            <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Review List */}
+              <div>
+            {product.reviews.length === 0 ? (
+                  <Card variant="outlined">
+                    <CardContent className="p-6 text-center">
+                      <span className="text-4xl mb-4 block">📝</span>
+                      <h3 className="text-xl font-medium mb-2">No Reviews Yet</h3>
+                      <p className="text-muted-foreground">
+                        Be the first to review this product
+                      </p>
+                    </CardContent>
+                  </Card>
+            ) : (
+                  <div className="space-y-4">
+                {product.reviews.map((review) => (
+                      <Card key={review._id} variant="outline" animation="hover">
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-lg">{review.name}</CardTitle>
+                    <Rating value={review.rating} />
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-muted-foreground">{review.comment}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
             
             {/* Review Form */}
-            <div className="mt-6">
-              <h3 className="text-xl font-bold mb-4">Write a Customer Review</h3>
-              
+              <div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Write a Customer Review</CardTitle>
+                  </CardHeader>
+                  <CardContent>
               {userInfo ? (
-                <form onSubmit={submitHandler} className="bg-white p-6 rounded-lg shadow-md">
-                  <div className="mb-4">
-                    <label className="block mb-2">Rating</label>
-                    <select
-                      value={rating}
-                      onChange={(e) => setRating(Number(e.target.value))}
-                      className="border rounded p-2 w-full"
-                      required
-                    >
-                      <option value="">Select...</option>
-                      <option value="1">1 - Poor</option>
-                      <option value="2">2 - Fair</option>
-                      <option value="3">3 - Good</option>
-                      <option value="4">4 - Very Good</option>
-                      <option value="5">5 - Excellent</option>
-                    </select>
+                      <form onSubmit={submitHandler} className="space-y-4">
+                        <div>
+                          <label className="block mb-2 font-medium">Rating</label>
+                          <div className="flex items-center gap-2 text-2xl">
+                            {renderStars(rating)}
+                          </div>
                   </div>
                   
-                  <div className="mb-4">
-                    <label className="block mb-2">Comment</label>
+                        <div>
+                          <label className="block mb-2 font-medium">Comment</label>
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      className="border rounded p-2 w-full"
-                      rows="4"
+                            className="border rounded-md p-2 w-full h-32 resize-none bg-background"
                       required
+                            placeholder="Share your experience with this product..."
                     ></textarea>
                   </div>
                   
-                  <button
+                  <Button
                     type="submit"
-                    className="bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700"
+                          disabled={!rating}
                   >
                     Submit Review
-                  </button>
+                  </Button>
                 </form>
               ) : (
-                <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
-                  Please <Link to="/login" className="underline">sign in</Link> to write a review
+                      <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg">
+                        Please <Link to="/login" className="underline font-medium">sign in</Link> to write a review
                 </div>
               )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </>

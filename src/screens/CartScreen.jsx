@@ -84,7 +84,7 @@ const CartScreen = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        ${item.price.toFixed(2)}
+                        ₹{item.price.toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <select
@@ -107,7 +107,7 @@ const CartScreen = () => {
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        ${(item.price * item.qty).toFixed(2)}
+                        ₹{(item.price * item.qty).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
@@ -133,13 +133,13 @@ const CartScreen = () => {
             
             <div className="mb-4 flex justify-between">
               <span>Items ({cartItems.reduce((acc, item) => acc + item.qty, 0)}):</span>
-              <span>${itemsPrice.toFixed(2)}</span>
+              <span>₹{itemsPrice.toFixed(2)}</span>
             </div>
             
             <div className="border-t pt-4 mt-4">
               <div className="flex justify-between font-bold text-lg">
                 <span>Total:</span>
-                <span>${itemsPrice.toFixed(2)}</span>
+                <span>₹{itemsPrice.toFixed(2)}</span>
               </div>
             </div>
             

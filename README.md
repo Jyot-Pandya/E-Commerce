@@ -1,6 +1,6 @@
-# ShopHub E-Commerce Platform
+# E-Commerce Platform
 
-A full-stack e-commerce application built with the MERN stack (MongoDB, Express, React, Node.js).
+This is a full-stack e-commerce platform built with the MERN stack (MongoDB, Express, React, Node.js).
 
 ## Features
 
@@ -8,14 +8,19 @@ A full-stack e-commerce application built with the MERN stack (MongoDB, Express,
 - Product reviews and ratings
 - Top products carousel
 - Product pagination
-- Product search feature
-- User profile with orders
+- Product search functionality
+- User profile with order history
 - Admin product management
 - Admin user management
 - Admin order details page
-- Checkout process (shipping, payment method, etc)
+- Mark orders as delivered option
+- Checkout process (shipping, payment method, etc.)
 - PayPal / credit card integration
-- Database seeder (products & users)
+- Database seeder (users and products)
+
+## Currency
+
+The prices are in Indian Rupees (₹).
 
 ## Technology Stack
 

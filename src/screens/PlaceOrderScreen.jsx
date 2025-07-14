@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { createOrder, resetOrder } from '../slices/orderSlice';
 import { clearCartItems, calculatePrices } from '../slices/cartSlice';
 import Loader from '../components/Loader';
+import { Button } from '@/components/ui/button';
 
 const PlaceOrderScreen = () => {
   const dispatch = useDispatch();
@@ -13,6 +14,13 @@ const PlaceOrderScreen = () => {
   const { shippingAddress, paymentMethod, cartItems, itemsPrice, taxPrice, shippingPrice, totalPrice } = cart;
   
   const { order, success, error, loading } = useSelector((state) => state.order);
+
+  // Redirect if shipping address is missing
+  useEffect(() => {
+    if (!shippingAddress.address) {
+      navigate('/shipping');
+    }
+  }, [navigate, shippingAddress]);
 
   // Calculate prices
   useEffect(() => {
@@ -96,7 +104,7 @@ const PlaceOrderScreen = () => {
                       </Link>
                       
                       <div>
-                        {item.qty} x ${item.price} = ${(item.qty * item.price).toFixed(2)}
+                        {item.qty} x ₹{item.price} = ₹{(item.qty * item.price).toFixed(2)}
                       </div>
                     </div>
                   </div>
@@ -116,22 +124,22 @@ const PlaceOrderScreen = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Items:</span>
-                <span>${itemsPrice}</span>
+                <span>₹{itemsPrice?.toFixed(2)}</span>
               </div>
               
               <div className="flex justify-between">
                 <span>Shipping:</span>
-                <span>${shippingPrice}</span>
+                <span>₹{shippingPrice?.toFixed(2)}</span>
               </div>
               
               <div className="flex justify-between">
                 <span>Tax:</span>
-                <span>${taxPrice}</span>
+                <span>₹{taxPrice?.toFixed(2)}</span>
               </div>
               
               <div className="flex justify-between font-bold border-t pt-2 mt-2">
                 <span>Total:</span>
-                <span>${totalPrice}</span>
+                <span>₹{totalPrice?.toFixed(2)}</span>
               </div>
               
               {error && (
@@ -140,14 +148,14 @@ const PlaceOrderScreen = () => {
                 </div>
               )}
               
-              <button
+              <Button
                 type="button"
                 onClick={placeOrderHandler}
-                className="w-full mt-4 bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700 disabled:bg-gray-400"
+                className="w-full mt-4"
                 disabled={cartItems.length === 0}
               >
                 Place Order
-              </button>
+              </Button>
               
               {loading && <Loader />}
             </div>
