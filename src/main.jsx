@@ -7,11 +7,6 @@ import axios from 'axios';
 import { ThemeProvider } from './components/ui/theme-provider';
 import { ToastProvider } from './components/ui/toast';
 
-// Set base URL for axios only in development
-if (process.env.NODE_ENV === 'development') {
-  axios.defaults.baseURL = 'http://localhost:5000';
-}
-
 // Add error logging
 window.addEventListener('error', (event) => {
   console.error('Global error caught:', event.error);
