@@ -8,7 +8,7 @@ import { ThemeProvider } from './components/ui/theme-provider';
 import { ToastProvider } from './components/ui/toast';
 
 // Set base URL for axios
-axios.defaults.baseURL = 'http://localhost:5000';
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 // Add error logging
 window.addEventListener('error', (event) => {
