@@ -21,6 +21,9 @@ const paymentRoutes = require('./routes/paymentRoutes');
 // Initialize express app
 const app = express();
 
+// Trust the proxy to get the correct protocol (https)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
 app.use(cors());
