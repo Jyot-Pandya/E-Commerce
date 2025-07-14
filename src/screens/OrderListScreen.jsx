@@ -47,7 +47,7 @@ const OrderListScreen = () => {
   };
 
   return (
-    <div>
+    <div className="text-gray-900 dark:text-gray-100">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Orders</h1>
         <Button onClick={exportHandler}>Export to CSV</Button>
@@ -60,35 +60,35 @@ const OrderListScreen = () => {
           {error?.message || 'An error occurred'}
         </div>
       ) : state === 'hasValue' && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     USER
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     DATE
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     TOTAL
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     PAID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     DELIVERED
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     ACTIONS
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {orders && orders.map((order) => (
                   <tr key={order._id}>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -105,20 +105,20 @@ const OrderListScreen = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {order.isPaid ? (
-                        <span className="text-green-600">
+                        <span className="text-green-600 dark:text-green-400">
                           {new Date(order.paidAt).toLocaleDateString()}
                         </span>
                       ) : (
-                        <i className="fas fa-times text-red-600"></i>
+                        <i className="fas fa-times text-red-600 dark:text-red-400"></i>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {order.isDelivered ? (
-                        <span className="text-green-600">
+                        <span className="text-green-600 dark:text-green-400">
                           {new Date(order.deliveredAt).toLocaleDateString()}
                         </span>
                       ) : (
-                        <i className="fas fa-times text-red-600"></i>
+                        <i className="fas fa-times text-red-600 dark:text-red-400"></i>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

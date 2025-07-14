@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useRecoilValue, useRecoilValueLoadable, useRecoilCallback, useSetRecoilState } from 'recoil';
+import { useRecoilCallback, useRecoilValue, useSetRecoilState, useRecoilValueLoadable } from 'recoil';
+import axios from 'axios';
 import {
   productsQuery,
   createdProductState,
@@ -26,6 +27,8 @@ const ProductListScreen = () => {
   const loading = state === 'loading';
   const error = state === 'hasError' ? contents : null;
 
+  const createLoading = useRecoilValue(productCreateLoadingState);
+  const createError = useRecoilValue(productCreateErrorState);
   const successCreate = useRecoilValue(productSuccessCreateState);
   const createdProduct = useRecoilValue(createdProductState);
   const successDelete = useRecoilValue(productSuccessDeleteState);
@@ -97,7 +100,7 @@ const ProductListScreen = () => {
   });
 
   return (
-    <div>
+    <div className="text-gray-900 dark:text-gray-100">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Products</h1>
         <button
@@ -108,6 +111,8 @@ const ProductListScreen = () => {
         </button>
       </div>
       
+      {createLoading && <Loader />}
+      {createError && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{createError}</div>}
       {loading ? (
         <Loader />
       ) : error ? (
@@ -116,32 +121,32 @@ const ProductListScreen = () => {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       NAME
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       PRICE
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       CATEGORY
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       BRAND
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       ACTIONS
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {products && products.map((product) => (
                     <tr key={product._id}>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -187,10 +192,10 @@ const ProductListScreen = () => {
                 <Link
                   key={x + 1}
                   to={`/admin/productlist/${x + 1}`}
-                  className={`px-4 py-2 mx-1 border ${
+                  className={`px-4 py-2 mx-1 border rounded-md ${
                     x + 1 === page
-                      ? 'bg-gray-800 text-white'
-                      : 'bg-white text-gray-800'
+                      ? 'bg-gray-800 text-white border-gray-800'
+                      : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
                   }`}
                 >
                   {x + 1}

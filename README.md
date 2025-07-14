@@ -2,21 +2,23 @@
 
 This is a full-stack e-commerce platform built with the MERN stack (MongoDB, Express, React, Node.js).
 
+## Live Demo
+
+The application is deployed on Vercel. You can view the live demo here: [https://myshophub.vercel.app/](https://myshophub.vercel.app/) 
+
 ## Features
 
 - Full-featured shopping cart
 - Product reviews and ratings
 - Top products carousel
 - Product pagination
-- Product search functionality
+- Product search and category filtering
 - User profile with order history
-- Admin product management
-- Admin user management
-- Admin order details page
+- Admin dashboard for managing products, users, and orders
 - Mark orders as delivered option
-- Checkout process (shipping, payment method, etc.)
-- PayPal / credit card integration
-- Database seeder (users and products)
+- Secure checkout process (shipping, payment)
+- Razorpay integration for payments
+- Database seeder for initial setup (users and products)
 
 ## Currency
 
@@ -25,105 +27,101 @@ The prices are in Indian Rupees (₹).
 ## Technology Stack
 
 ### Frontend
-- React.js
-- Redux Toolkit for state management
-- React Router for navigation
-- Axios for API requests
-- CSS with Tailwind CSS
+- **React.js**: A JavaScript library for building user interfaces.
+- **Recoil**: A state management library for React.
+- **React Router**: For client-side routing and navigation.
+- **Vite**: A modern frontend build tool.
+- **Tailwind CSS**: A utility-first CSS framework for rapid UI development.
+- **Axios**: For making HTTP requests to the backend API.
 
 ### Backend
-- Node.js
-- Express.js
-- MongoDB with Mongoose
-- JWT for authentication
-- Bcrypt for password hashing
-- Stripe for payment processing
+- **Node.js**: A JavaScript runtime for the backend.
+- **Express.js**: A web application framework for Node.js.
+- **MongoDB**: A NoSQL database for data storage.
+- **Mongoose**: An ODM library for MongoDB.
+- **JWT**: For secure user authentication and authorization.
+- **Bcrypt.js**: For hashing user passwords.
+- **Razorpay**: For processing payments.
 
 ## Installation
 
 ### Prerequisites
-- Node.js
-- MongoDB
+- Node.js (v18 or later)
+- MongoDB (local or cloud-hosted instance like MongoDB Atlas)
 
 ### Setup
-1. Clone the repository
-```
-git clone <repository-url>
+1. Clone the repository:
+```bash
+git clone https://github.com/your-username/your-repo-name.git
+cd your-repo-name
 ```
 
-2. Install dependencies for both frontend and backend
-```
-# Install backend dependencies
+2. Install backend dependencies:
+```bash
 cd backend
 npm install
+```
 
-# Install frontend dependencies
+3. Install frontend dependencies from the root directory:
+```bash
 cd ..
 npm install
 ```
 
-3. Create a .env file in the backend directory with the following variables:
+4. Create a `.env` file in the `backend` directory with the following variables:
 ```
 PORT=5000
 MONGO_URI=your_mongodb_uri
 JWT_SECRET=your_jwt_secret
-STRIPE_SECRET_KEY=your_stripe_secret_key
 NODE_ENV=development
+
+# Razorpay API Keys
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 ```
 
-4. Seed the database
-```
+5. Seed the database (optional):
+This will populate the database with some sample users and products.
+```bash
 cd backend
 npm run data:import
 ```
 
 ## Running the Application
 
-### Development mode
+You can run both the frontend and backend servers concurrently from the root directory.
+```bash
+npm run start
 ```
-# Run backend
-cd backend
-npm run dev
-
-# Run frontend
-cd ..
-npm run dev
-```
-
-### Production mode
-```
-# Build frontend
-npm run build
-
-# Run backend (which will serve frontend)
-cd backend
-npm start
-```
+The frontend will be available at `http://localhost:5173` and the backend at `http://localhost:5000`.
 
 ## API Endpoints
 
 ### Products
-- GET /api/products - Get all products
-- GET /api/products/:id - Get a product by ID
-- POST /api/products - Create a product (Admin only)
-- PUT /api/products/:id - Update a product (Admin only)
-- DELETE /api/products/:id - Delete a product (Admin only)
-- POST /api/products/:id/reviews - Create a product review
+- `GET /api/products`: Get all products (with pagination, search, and category filtering)
+- `GET /api/products/:id`: Get a product by ID
+- `POST /api/products`: Create a product (Admin only)
+- `PUT /api/products/:id`: Update a product (Admin only)
+- `DELETE /api/products/:id`: Delete a product (Admin only)
+- `POST /api/products/:id/reviews`: Create a product review
 
 ### Users
-- POST /api/users - Register a user
-- POST /api/users/login - Authenticate user & get token
-- GET /api/users/profile - Get user profile
-- PUT /api/users/profile - Update user profile
-- GET /api/users - Get all users (Admin only)
-- DELETE /api/users/:id - Delete a user (Admin only)
+- `POST /api/users`: Register a new user
+- `POST /api/users/login`: Authenticate a user and get a token
+- `GET /api/users/profile`: Get the logged-in user's profile
+- `PUT /api/users/profile`: Update the user's profile
+- `GET /api/users`: Get all users (Admin only)
+- `DELETE /api/users/:id`: Delete a user (Admin only)
 
 ### Orders
-- POST /api/orders - Create a new order
-- GET /api/orders/:id - Get order by ID
-- PUT /api/orders/:id/pay - Update order to paid
-- GET /api/orders/myorders - Get logged in user orders
-- GET /api/orders - Get all orders (Admin only)
-- PUT /api/orders/:id/deliver - Update order to delivered (Admin only)
+- `POST /api/orders`: Create a new order
+- `GET /api/orders/myorders`: Get all orders for the logged-in user
+- `GET /api/orders/:id`: Get a specific order by ID
+- `GET /api/orders`: Get all orders (Admin only)
+- `PUT /api/orders/:id/deliver`: Mark an order as delivered (Admin only)
+
+### Payments
+- `GET /api/config/razorpay`: Get Razorpay client ID
+- The payment creation and verification is handled during the order placement process.
 
 
