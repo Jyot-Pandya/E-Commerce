@@ -1,24 +1,19 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchTopProducts } from '../slices/productSlice';
+import { useRecoilValueLoadable } from 'recoil';
+import { topProductsQuery } from '../state/productState';
 import Loader from './Loader';
 
 const ProductCarousel = () => {
-  const dispatch = useDispatch();
-  const { topProducts, loading, error } = useSelector((state) => state.product);
+  const topProductsLoadable = useRecoilValueLoadable(topProductsQuery);
+  const { state, contents: topProducts } = topProductsLoadable;
 
-  useEffect(() => {
-    dispatch(fetchTopProducts());
-  }, [dispatch]);
-
-  return loading ? (
+  return state === 'loading' ? (
     <Loader />
-  ) : error ? (
+  ) : state === 'hasError' ? (
     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-      {error}
+      {topProducts?.message || 'An error occurred'}
     </div>
-  ) : (
+  ) : state === 'hasValue' && (
     <div className="mb-8 bg-gray-100 p-4 rounded-lg">
       <h2 className="text-2xl font-bold mb-4">Top Rated Products</h2>
       <div className="flex overflow-x-auto space-x-4 pb-4">

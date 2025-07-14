@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useRecoilValueLoadable } from 'recoil';
 import { useParams } from 'react-router-dom';
-import { fetchProducts } from '../slices/productSlice';
+import { productsQuery } from '../state/productState';
 import Product from '../components/Product';
 import Loader from '../components/Loader';
 import ProductCarousel from '../components/ProductCarousel';
 import CategoryFilter from '../components/CategoryFilter';
+import TestComponent from '../components/ui/test-component';
 import { FaShoppingCart, FaSearch } from 'react-icons/fa';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,21 +15,19 @@ import { Input } from '@/components/ui/input';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 
 const HomeScreen = () => {
-  const dispatch = useDispatch();
   const { keyword, pageNumber = 1, category } = useParams();
   const [selectedCategory, setSelectedCategory] = useState(category || '');
   const [searchInput, setSearchInput] = useState('');
 
-  const { products, loading, error, page, pages } = useSelector(
-    (state) => state.product
-  );
+  const productsLoadable = useRecoilValueLoadable(productsQuery({ keyword, pageNumber, category: selectedCategory }));
+  const { state, contents } = productsLoadable;
+  const { products, page, pages } = state === 'hasValue' ? contents : { products: [], page: 1, pages: 1 };
+  const loading = state === 'loading';
+  const error = state === 'hasError' ? contents : null;
 
-  useEffect(() => {
-    dispatch(fetchProducts({ keyword, pageNumber, category: selectedCategory }));
-  }, [dispatch, keyword, pageNumber, selectedCategory]);
 
   // Group products by category when no filter is applied
-  const groupedProducts = !selectedCategory && !keyword 
+  const groupedProducts = !selectedCategory && !keyword && state === 'hasValue'
     ? products.reduce((acc, product) => {
         if (!acc[product.category]) {
           acc[product.category] = [];
@@ -51,6 +50,7 @@ const HomeScreen = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      <TestComponent />
       {!keyword && <ProductCarousel />}
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -113,7 +113,7 @@ const HomeScreen = () => {
             </div>
           ) : error ? (
             <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-in-bottom">
-              {error}
+              {error?.message || 'An error occurred'}
             </div>
           ) : (
             <>

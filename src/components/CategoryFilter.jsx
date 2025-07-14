@@ -1,16 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
-import { fetchCategories } from '../slices/productSlice';
+import { useRecoilValueLoadable } from 'recoil';
+import { useNavigate } from 'react-router-dom';
+import { categoriesQuery } from '../state/productState';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CategoryFilter = ({ onSelectCategory, selectedCategory }) => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { categories, loading } = useSelector((state) => state.product);
-
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
+  const categoriesLoadable = useRecoilValueLoadable(categoriesQuery);
+  const { state, contents: categories } = categoriesLoadable;
 
   const handleCategoryClick = (category) => {
     if (onSelectCategory) {
@@ -20,7 +16,22 @@ const CategoryFilter = ({ onSelectCategory, selectedCategory }) => {
     }
   };
 
-  if (loading || !categories || categories.length === 0) {
+  if (state === 'loading') {
+    return (
+        <div className="bg-white rounded-lg shadow-md mb-8 overflow-hidden">
+            <div className="bg-gray-800 text-white px-6 py-3">
+                <h2 className="text-xl font-semibold">Shop by Category</h2>
+            </div>
+            <div className="p-4 space-y-2">
+                <Skeleton className="h-8 w-1/3" />
+                <Skeleton className="h-8 w-1/2" />
+                <Skeleton className="h-8 w-1/4" />
+            </div>
+        </div>
+    )
+  }
+
+  if (state === 'hasError' || !categories || categories.length === 0) {
     return null;
   }
 

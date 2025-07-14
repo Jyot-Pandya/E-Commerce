@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { savePaymentMethod } from '../slices/cartSlice';
+import { useSetRecoilState } from 'recoil';
+import { paymentMethodState } from '../state/cartState';
 import { Button } from '@/components/ui/button';
 
 const PaymentScreen = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const setPaymentMethodState = useSetRecoilState(paymentMethodState);
 
   // Set Razorpay as the default and only payment method
   const [paymentMethod, setPaymentMethod] = useState('Razorpay');
 
   const submitHandler = (e) => {
     e.preventDefault();
-    dispatch(savePaymentMethod(paymentMethod));
+    setPaymentMethodState(paymentMethod);
     navigate('/placeorder');
   };
 

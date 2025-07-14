@@ -1,19 +1,31 @@
-import { useDispatch } from 'react-redux';
-import { addCartItem } from '../slices/cartSlice';
+import { useSetRecoilState } from 'recoil';
+import { cartState } from '../state/cartState';
 import { ProductCard } from '@/components/ui/product-card';
 
 const Product = ({ product }) => {
-  const dispatch = useDispatch();
+  const setCartItems = useSetRecoilState(cartState);
 
   const addToCartHandler = () => {
-    dispatch(addCartItem({ 
+    const item = { 
       product: product._id,
       name: product.name,
       image: product.image,
       price: product.price,
       countInStock: product.countInStock,
       qty: 1
-    }));
+    };
+
+    setCartItems((oldCart) => {
+        const existItem = oldCart.find((x) => x.product === item.product);
+        if (existItem) {
+            // Increment quantity if item already exists
+            return oldCart.map((x) =>
+                x.product === existItem.product ? { ...x, qty: x.qty + 1 } : x
+            );
+        } else {
+            return [...oldCart, item];
+        }
+    });
   };
 
   return (

@@ -1,29 +1,56 @@
 import { useEffect } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { addCartItem, removeCartItem, calculatePrices } from '../slices/cartSlice';
+import { useRecoilState, useRecoilValue, useRecoilCallback } from 'recoil';
+import { cartState, cartTotalState } from '../state/cartState';
+import axios from 'axios';
 
 const CartScreen = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { id } = useParams();
   const location = useLocation();
 
   const qty = new URLSearchParams(location.search).get('qty') || 1;
 
-  const { cartItems, itemsPrice } = useSelector((state) => state.cart);
+  const [cartItems, setCartItems] = useRecoilState(cartState);
+  const { itemsPrice, totalPrice } = useRecoilValue(cartTotalState);
+
+  const addToCart = useRecoilCallback(({ set }) => async (id, qty) => {
+    const { data } = await axios.get(`/api/products/${id}`);
+    const item = {
+      product: data._id,
+      name: data.name,
+      image: data.image,
+      price: data.price,
+      countInStock: data.countInStock,
+      qty,
+    };
+    
+    set(cartState, (oldCart) => {
+        const existItem = oldCart.find((x) => x.product === item.product);
+        if (existItem) {
+            return oldCart.map((x) =>
+            x.product === existItem.product ? item : x
+            );
+        } else {
+            return [...oldCart, item];
+        }
+    });
+  });
 
   useEffect(() => {
     if (id) {
-      dispatch(addToCart({ id, qty: Number(qty) }));
+      addToCart(id, Number(qty));
     }
-    dispatch(calculatePrices());
-  }, [dispatch, id, qty]);
+  }, [id, qty, addToCart]);
 
   const removeFromCartHandler = (id) => {
-    dispatch(removeCartItem(id));
-    dispatch(calculatePrices());
+    setCartItems(cartItems.filter((x) => x.product !== id));
   };
+
+  const updateQtyHandler = (item, qty) => {
+    const newItem = { ...item, qty: Number(qty) };
+    setCartItems(cartItems.map(i => i.product === item.product ? newItem : i));
+  }
 
   const checkoutHandler = () => {
     navigate('/login?redirect=shipping');
@@ -89,14 +116,7 @@ const CartScreen = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <select
                           value={item.qty}
-                          onChange={(e) =>
-                            dispatch(
-                              addCartItem({
-                                ...item,
-                                qty: Number(e.target.value),
-                              })
-                            )
-                          }
+                          onChange={(e) => updateQtyHandler(item, e.target.value)}
                           className="border rounded p-2"
                         >
                           {[...Array(item.countInStock).keys()].map((x) => (
@@ -139,7 +159,7 @@ const CartScreen = () => {
             <div className="border-t pt-4 mt-4">
               <div className="flex justify-between font-bold text-lg">
                 <span>Total:</span>
-                <span>₹{itemsPrice.toFixed(2)}</span>
+                <span>₹{totalPrice.toFixed(2)}</span>
               </div>
             </div>
             

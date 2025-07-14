@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchProductDetails, updateProduct, resetUpdateProduct } from '../slices/productSlice';
+import { useRecoilValue, useRecoilValueLoadable, useRecoilCallback, useSetRecoilState } from 'recoil';
+import {
+  productDetailsQuery,
+  productSuccessUpdateState,
+  productUpdateLoadingState,
+  productUpdateErrorState,
+} from '../state/productState';
+import { userInfoState } from '../state/userState';
 import Loader from '../components/Loader';
-
-// Placeholder for product update action that would be in the productSlice
-// const updateProduct = (product) => ({ type: 'UPDATE_PRODUCT', payload: product });
 
 const ProductEditScreen = () => {
   const { id } = useParams();
@@ -18,65 +21,70 @@ const ProductEditScreen = () => {
   const [countInStock, setCountInStock] = useState(0);
   const [description, setDescription] = useState('');
   
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const userInfo = useRecoilValue(userInfoState);
+
+  const productLoadable = useRecoilValueLoadable(productDetailsQuery(id));
+  const { state, contents: product } = productLoadable;
   
-  const { 
-    loading, 
-    error, 
-    product, 
-    successUpdate
-  } = useSelector((state) => state.product);
-  
-  const { userInfo } = useSelector((state) => state.user);
+  const successUpdate = useRecoilValue(productSuccessUpdateState);
+  const loadingUpdate = useRecoilValue(productUpdateLoadingState);
+  const errorUpdate = useRecoilValue(productUpdateErrorState);
+
+  const setSuccessUpdate = useSetRecoilState(productSuccessUpdateState);
 
   useEffect(() => {
-    dispatch(resetUpdateProduct());
+    if (!userInfo || !userInfo.isAdmin) {
+      navigate('/login');
+    }
 
     if (successUpdate) {
+      setSuccessUpdate(false);
       navigate('/admin/productlist');
     } else {
-      if (!userInfo || !userInfo.isAdmin) {
-        navigate('/login');
-        return;
-      }
-      
-      if (!product || !product.name || product._id !== id) {
-        dispatch(fetchProductDetails(id));
-      } else {
-        setName(product.name);
-        setPrice(product.price);
-        setImage(product.image);
-        setBrand(product.brand);
-        setCategory(product.category);
-        setCountInStock(product.countInStock);
-        setDescription(product.description);
+      if (state === 'hasValue' && product) {
+        if (!product || product._id !== id) {
+          // This case should ideally not happen if query is working correctly
+        } else {
+            setName(product.name);
+            setPrice(product.price);
+            setImage(product.image);
+            setBrand(product.brand);
+            setCategory(product.category);
+            setCountInStock(product.countInStock);
+            setDescription(product.description);
+        }
       }
     }
-  }, [dispatch, navigate, id, product, userInfo, successUpdate]);
+  }, [id, product, state, successUpdate, navigate, userInfo, setSuccessUpdate]);
 
-  const submitHandler = (e) => {
+  const submitHandler = useRecoilCallback(({ set }) => async (e) => {
     e.preventDefault();
+    set(productUpdateLoadingState, true);
+    set(productUpdateErrorState, null);
+    set(productSuccessUpdateState, false);
     
-    dispatch(
-      updateProduct({
-        _id: id,
-        name,
-        price,
-        image,
-        brand,
-        category,
-        countInStock,
-        description,
-      })
-    );
-  };
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      const productData = { _id: id, name, price, image, brand, category, countInStock, description };
+      await axios.put(`/api/products/${id}`, productData, config);
+      set(productUpdateLoadingState, false);
+      set(productSuccessUpdateState, true);
+    } catch (error) {
+      const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+      set(productUpdateLoadingState, false);
+      set(productUpdateErrorState, message);
+    }
+  });
 
   const uploadFileHandler = async (e) => {
     const file = e.target.files[0];
-    // In a real app, this would handle file uploads to a storage service
     console.log(`File selected: ${file.name}`);
-    // For demonstration, we'll just set the image URL to a mock value
     setImage(`/images/${file.name}`);
   };
 
@@ -90,11 +98,14 @@ const ProductEditScreen = () => {
         <div className="w-full max-w-lg">
           <h1 className="text-3xl font-bold mb-6">Edit Product</h1>
           
-          {loading ? (
+          {loadingUpdate && <Loader />}
+          {errorUpdate && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{errorUpdate}</div>}
+
+          {state === 'loading' ? (
             <Loader />
-          ) : error ? (
+          ) : state === 'hasError' ? (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
+              {productLoadable.contents?.message || 'An error occurred'}
             </div>
           ) : (
             <form onSubmit={submitHandler} className="bg-white p-6 rounded-lg shadow-md">

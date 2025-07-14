@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { getUserDetails, updateUserProfile } from '../slices/userSlice';
-import { listMyOrders } from '../slices/orderSlice';
+import { useRecoilValue, useRecoilValueLoadable, useRecoilCallback, useSetRecoilState } from 'recoil';
+import { 
+    userInfoState, 
+    userDetailsQuery,
+    userUpdateProfileLoadingState,
+    userUpdateProfileErrorState,
+    userUpdateProfileSuccessState 
+} from '../state/userState';
+// import { listMyOrders } from '../slices/orderSlice'; // TODO: Refactor orders
 import Loader from '../components/Loader';
 
 const ProfileScreen = () => {
@@ -11,57 +17,71 @@ const ProfileScreen = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
   
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { loading, error, userInfo, user, success } = useSelector(
-    (state) => state.user
-  );
-  
-  const { orders, loading: loadingOrders, error: errorOrders } = useSelector(
-    (state) => state.order
-  );
+  const userInfo = useRecoilValue(userInfoState);
+  const userDetailsLoadable = useRecoilValueLoadable(userDetailsQuery('profile'));
+  const { state: userDetailsState, contents: user } = userDetailsLoadable;
+
+  const loading = useRecoilValue(userUpdateProfileLoadingState);
+  const error = useRecoilValue(userUpdateProfileErrorState);
+  const success = useRecoilValue(userUpdateProfileSuccessState);
+  const setSuccess = useSetRecoilState(userUpdateProfileSuccessState);
+
+  // TODO: Refactor orders
+  // const { orders, loading: loadingOrders, error: errorOrders } = useSelector(
+  //   (state) => state.order
+  // );
 
   useEffect(() => {
     if (!userInfo) {
       navigate('/login');
     } else {
-      if (!user || !user.name || success) {
-        dispatch(getUserDetails('profile'));
-        dispatch(listMyOrders());
-      } else {
+      if (userDetailsState === 'hasValue' && user) {
         setName(user.name);
         setEmail(user.email);
       }
+      // TODO: Refactor orders
+      // dispatch(listMyOrders());
     }
-  }, [dispatch, navigate, userInfo, user, success]);
+  }, [navigate, userInfo, userDetailsState, user]);
 
   useEffect(() => {
     if (success) {
-      setSuccessMessage('Profile Updated Successfully');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setTimeout(() => setSuccess(false), 3000);
     }
-  }, [success]);
+  }, [success, setSuccess]);
 
-  const submitHandler = (e) => {
+  const submitHandler = useRecoilCallback(({ set, snapshot }) => async (e) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
       setMessage('Passwords do not match');
     } else {
       setMessage(null);
-      dispatch(
-        updateUserProfile({
-          id: user._id,
-          name,
-          email,
-          password,
-        })
-      );
+      set(userUpdateProfileLoadingState, true);
+      set(userUpdateProfileErrorState, null);
+      set(userUpdateProfileSuccessState, false);
+      try {
+        const currentUserInfo = await snapshot.getPromise(userInfoState);
+        const config = {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentUserInfo.token}`,
+          },
+        };
+        const { data } = await axios.put('/api/users/profile', { id: user._id, name, email, password }, config);
+        set(userUpdateProfileLoadingState, false);
+        set(userUpdateProfileSuccessState, true);
+        set(userInfoState, data); // Update user info in global state
+      } catch (error) {
+        const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+        set(userUpdateProfileLoadingState, false);
+        set(userUpdateProfileErrorState, message);
+      }
     }
-  };
+  });
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -80,13 +100,13 @@ const ProfileScreen = () => {
           </div>
         )}
         
-        {successMessage && (
+        {success && (
           <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-            {successMessage}
+            Profile Updated Successfully
           </div>
         )}
         
-        {loading && <Loader />}
+        {(loading || userDetailsState === 'loading') && <Loader />}
         
         <form onSubmit={submitHandler} className="bg-white p-6 rounded-lg shadow-md">
           <div className="mb-4">
@@ -157,7 +177,7 @@ const ProfileScreen = () => {
       <div className="md:col-span-2">
         <h2 className="text-2xl font-bold mb-6">My Orders</h2>
         
-        {loadingOrders ? (
+        {/* {loadingOrders ? (
           <Loader />
         ) : errorOrders ? (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -237,7 +257,7 @@ const ProfileScreen = () => {
               </table>
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

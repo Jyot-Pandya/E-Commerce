@@ -1,25 +1,29 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { getOrders } from '../slices/orderSlice';
+import { useRecoilValue, useRecoilValueLoadable } from 'recoil';
+import { ordersListQuery } from '../state/orderState';
+import { userInfoState } from '../state/userState';
 import Loader from '../components/Loader';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
 
 const OrderListScreen = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  const { orders, loading, error } = useSelector((state) => state.order);
-  const { userInfo } = useSelector((state) => state.user);
+  const ordersLoadable = useRecoilValueLoadable(ordersListQuery);
+  const { state, contents: orders } = ordersLoadable;
+  const loading = state === 'loading';
+  const error = state === 'hasError' ? contents : null;
+
+  const userInfo = useRecoilValue(userInfoState);
 
   useEffect(() => {
     if (userInfo && userInfo.isAdmin) {
-      dispatch(getOrders());
+      // Data is fetched by the selector
     } else {
       navigate('/login');
     }
-  }, [dispatch, navigate, userInfo]);
+  }, [navigate, userInfo]);
 
   const exportHandler = async () => {
     try {
@@ -53,9 +57,9 @@ const OrderListScreen = () => {
         <Loader />
       ) : error ? (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+          {error?.message || 'An error occurred'}
         </div>
-      ) : (
+      ) : state === 'hasValue' && (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">

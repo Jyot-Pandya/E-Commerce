@@ -1,64 +1,100 @@
 import { useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { 
-  fetchProducts, 
-  createProduct, 
-  resetCreateProduct, 
-  deleteProduct,
-  resetDeleteProduct
-} from '../slices/productSlice';
+import { useRecoilValue, useRecoilValueLoadable, useRecoilCallback, useSetRecoilState } from 'recoil';
+import {
+  productsQuery,
+  createdProductState,
+  productSuccessCreateState,
+  productCreateLoadingState,
+  productCreateErrorState,
+  productDeleteLoadingState,
+  productDeleteErrorState,
+  productSuccessDeleteState,
+  productsRefetchState,
+} from '../state/productState';
+import { userInfoState } from '../state/userState';
 import Loader from '../components/Loader';
 
 const ProductListScreen = () => {
   const { pageNumber = 1 } = useParams();
-  
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  
-  const { 
-    loading, 
-    error, 
-    products, 
-    page, 
-    pages, 
-    successCreate, 
-    product: createdProductData, 
-    successDelete
-  } = useSelector((state) => state.product);
-  
-  const { userInfo } = useSelector((state) => state.user);
+  const userInfo = useRecoilValue(userInfoState);
+
+  const productsLoadable = useRecoilValueLoadable(productsQuery({ pageNumber }));
+  const { state, contents } = productsLoadable;
+  const { products, page, pages } = state === 'hasValue' ? contents : { products: [], page: 1, pages: 1 };
+  const loading = state === 'loading';
+  const error = state === 'hasError' ? contents : null;
+
+  const successCreate = useRecoilValue(productSuccessCreateState);
+  const createdProduct = useRecoilValue(createdProductState);
+  const successDelete = useRecoilValue(productSuccessDeleteState);
+
+  const setSuccessCreate = useSetRecoilState(productSuccessCreateState);
+  const setSuccessDelete = useSetRecoilState(productSuccessDeleteState);
+  const setProductsRefetch = useSetRecoilState(productsRefetchState);
 
   useEffect(() => {
-    dispatch(resetCreateProduct());
-    dispatch(resetDeleteProduct());
-
-    if (userInfo && userInfo.isAdmin) {
-      dispatch(fetchProducts({ pageNumber }));
-    } else {
+    if (!userInfo || !userInfo.isAdmin) {
       navigate('/login');
     }
-  }, [dispatch, navigate, userInfo, pageNumber]);
+  }, [userInfo, navigate]);
 
   useEffect(() => {
-    if (successCreate && createdProductData?._id) {
-      navigate(`/admin/product/${createdProductData._id}/edit`);
+    if (successCreate && createdProduct?._id) {
+      navigate(`/admin/product/${createdProduct._id}/edit`);
+      setSuccessCreate(false); // Reset state
     }
     if (successDelete) {
       alert('Product deleted successfully!');
-      dispatch(fetchProducts({ pageNumber }));
+      setSuccessDelete(false); // Reset state
     }
-  }, [successCreate, createdProductData, navigate, dispatch, successDelete, pageNumber]);
+  }, [successCreate, createdProduct, navigate, successDelete, setSuccessCreate, setSuccessDelete]);
 
-  const deleteHandler = (id) => {
+  const deleteHandler = useRecoilCallback(({ set }) => async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
-      dispatch(deleteProduct(id));
+      set(productDeleteLoadingState, true);
+      set(productDeleteErrorState, null);
+      set(productSuccessDeleteState, false);
+      try {
+        const config = {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        };
+        await axios.delete(`/api/products/${id}`, config);
+        set(productDeleteLoadingState, false);
+        set(productSuccessDeleteState, true);
+        setProductsRefetch(v => v + 1); // Trigger refetch
+      } catch (error) {
+        const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+        set(productDeleteLoadingState, false);
+        set(productDeleteErrorState, message);
+      }
     }
-  };
+  });
 
-  const createProductHandler = () => {
-    dispatch(createProduct());
-  };
+  const createProductHandler = useRecoilCallback(({ set }) => async () => {
+    set(productCreateLoadingState, true);
+    set(productCreateErrorState, null);
+    set(productSuccessCreateState, false);
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      const { data } = await axios.post(`/api/products`, {}, config);
+      set(productCreateLoadingState, false);
+      set(productSuccessCreateState, true);
+      set(createdProductState, data);
+    } catch (error) {
+      const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+      set(productCreateLoadingState, false);
+      set(productCreateErrorState, message);
+    }
+  });
 
   return (
     <div>
@@ -76,7 +112,7 @@ const ProductListScreen = () => {
         <Loader />
       ) : error ? (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+          {error?.message || 'An error occurred'}
         </div>
       ) : (
         <>

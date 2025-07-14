@@ -1,19 +1,33 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { createOrder, resetOrder } from '../slices/orderSlice';
-import { clearCartItems, calculatePrices } from '../slices/cartSlice';
+import { useRecoilValue, useRecoilCallback, useResetRecoilState } from 'recoil';
+import { cartState, shippingAddressState, paymentMethodState, cartTotalState } from '../state/cartState';
+import { 
+    orderCreateLoadingState,
+    orderCreateErrorState,
+    orderCreateSuccessState,
+    createdOrderState
+} from '../state/orderState';
+import { userInfoState } from '../state/userState';
 import Loader from '../components/Loader';
 import { Button } from '@/components/ui/button';
+import axios from 'axios';
 
 const PlaceOrderScreen = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  const cart = useSelector((state) => state.cart);
-  const { shippingAddress, paymentMethod, cartItems, itemsPrice, taxPrice, shippingPrice, totalPrice } = cart;
+  const shippingAddress = useRecoilValue(shippingAddressState);
+  const paymentMethod = useRecoilValue(paymentMethodState);
+  const cartItems = useRecoilValue(cartState);
+  const { itemsPrice, taxPrice, shippingPrice, totalPrice } = useRecoilValue(cartTotalState);
+
+  const loading = useRecoilValue(orderCreateLoadingState);
+  const error = useRecoilValue(orderCreateErrorState);
+  const success = useRecoilValue(orderCreateSuccessState);
+  const order = useRecoilValue(createdOrderState);
   
-  const { order, success, error, loading } = useSelector((state) => state.order);
+  const resetCart = useResetRecoilState(cartState);
+  const resetOrderState = useResetRecoilState(createdOrderState); // Example of resetting specific state
 
   // Redirect if shipping address is missing
   useEffect(() => {
@@ -22,33 +36,46 @@ const PlaceOrderScreen = () => {
     }
   }, [navigate, shippingAddress]);
 
-  // Calculate prices
-  useEffect(() => {
-    dispatch(calculatePrices());
-  }, [dispatch, cartItems]);
-  
   // Redirect if order is placed successfully
   useEffect(() => {
     if (success && order) {
       navigate(`/order/${order._id}`);
-      dispatch(clearCartItems());
-      dispatch(resetOrder());
+      resetCart();
+      // Reset order state after navigation
     }
-  }, [success, navigate, order, dispatch]);
+  }, [success, navigate, order, resetCart]);
 
-  const placeOrderHandler = () => {
-    dispatch(
-      createOrder({
-        orderItems: cartItems,
-        shippingAddress,
-        paymentMethod,
-        itemsPrice,
-        taxPrice,
-        shippingPrice,
-        totalPrice,
-      })
-    );
-  };
+  const placeOrderHandler = useRecoilCallback(({ set, snapshot }) => async () => {
+    set(orderCreateLoadingState, true);
+    set(orderCreateErrorState, null);
+    set(orderCreateSuccessState, false);
+    try {
+        const userInfo = await snapshot.getPromise(userInfoState);
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${userInfo.token}`,
+            },
+        };
+        const orderData = {
+            orderItems: cartItems,
+            shippingAddress,
+            paymentMethod,
+            itemsPrice,
+            taxPrice,
+            shippingPrice,
+            totalPrice,
+        };
+      const { data } = await axios.post('/api/orders', orderData, config);
+      set(createdOrderState, data);
+      set(orderCreateSuccessState, true);
+    } catch (error) {
+      const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+      set(orderCreateErrorState, message);
+    } finally {
+        set(orderCreateLoadingState, false);
+    }
+  });
 
   return (
     <div>

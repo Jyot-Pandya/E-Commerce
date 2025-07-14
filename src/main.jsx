@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Provider } from 'react-redux';
-import store from './store';
+import { RecoilRoot } from 'recoil';
 import App from './App';
 import './index.css';
 import axios from 'axios';
@@ -22,12 +21,12 @@ document.documentElement.classList.add('light');
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <Provider store={store}>
+    <RecoilRoot>
       <ThemeProvider defaultTheme="light" storageKey="ecommerce-theme">
         <ToastProvider>
-      <App />
+          <App />
         </ToastProvider>
       </ThemeProvider>
-    </Provider>
+    </RecoilRoot>
   </React.StrictMode>,
 );

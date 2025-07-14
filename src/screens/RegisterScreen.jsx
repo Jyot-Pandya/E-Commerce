@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { register, clearError } from '../slices/userSlice';
+import { useRecoilValue, useRecoilCallback, useSetRecoilState } from 'recoil';
+import { userInfoState, userRegisterLoadingState, userRegisterErrorState } from '../state/userState';
 import Loader from '../components/Loader';
 import { Button } from '@/components/ui/button';
+import axios from 'axios';
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
@@ -12,11 +13,13 @@ const RegisterScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState(null);
   
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { loading, error, userInfo } = useSelector((state) => state.user);
+  const loading = useRecoilValue(userRegisterLoadingState);
+  const error = useRecoilValue(userRegisterErrorState);
+  const userInfo = useRecoilValue(userInfoState);
+  const setError = useSetRecoilState(userRegisterErrorState);
 
   const redirect = location.search ? location.search.split('=')[1] : '/';
 
@@ -26,20 +29,33 @@ const RegisterScreen = () => {
     }
     
     return () => {
-      dispatch(clearError());
+        setError(null);
     };
-  }, [navigate, userInfo, redirect, dispatch]);
+  }, [navigate, userInfo, redirect, setError]);
 
-  const submitHandler = (e) => {
+  const submitHandler = useRecoilCallback(({ set }) => async (e) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
       setMessage('Passwords do not match');
     } else {
       setMessage(null);
-      dispatch(register({ name, email, password }));
+      set(userRegisterLoadingState, true);
+      set(userRegisterErrorState, null);
+      try {
+        const config = {
+          headers: { 'Content-Type': 'application/json' },
+        };
+        const { data } = await axios.post('/api/users', { name, email, password }, config);
+        set(userInfoState, data);
+        set(userRegisterLoadingState, false);
+      } catch (error) {
+        const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+        set(userRegisterErrorState, message);
+        set(userRegisterLoadingState, false);
+      }
     }
-  };
+  });
 
   return (
     <div className="flex justify-center">

@@ -1,41 +1,68 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { getUsers, deleteUser, resetDeleteUser } from '../slices/userSlice';
+import { useRecoilValue, useRecoilValueLoadable, useRecoilCallback, useSetRecoilState } from 'recoil';
+import {
+  userInfoState,
+  usersListQuery,
+  userDeleteLoadingState,
+  userDeleteErrorState,
+  userDeleteSuccessState,
+  usersRefetchState
+} from '../state/userState';
 import Loader from '../components/Loader';
+import axios from 'axios';
 
 const UserListScreen = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const userInfo = useRecoilValue(userInfoState);
+
+  const usersLoadable = useRecoilValueLoadable(usersListQuery);
+  const { state, contents: users } = usersLoadable;
+  const loading = state === 'loading';
+  const error = state === 'hasError' ? users : null;
   
-  const { loading, error, users, successDelete } = useSelector(
-    (state) => state.user
-  );
-  
-  const { userInfo } = useSelector((state) => state.user);
+  const successDelete = useRecoilValue(userDeleteSuccessState);
+  const setSuccessDelete = useSetRecoilState(userDeleteSuccessState);
+  const setUsersRefetch = useSetRecoilState(usersRefetchState);
 
   useEffect(() => {
-    dispatch(resetDeleteUser());
-
     if (userInfo && userInfo.isAdmin) {
-      dispatch(getUsers());
+      // The selector will fetch automatically.
     } else {
       navigate('/login');
     }
-  }, [dispatch, navigate, userInfo]);
+  }, [navigate, userInfo]);
 
   useEffect(() => {
     if (successDelete) {
       alert('User deleted successfully!');
-      dispatch(getUsers());
+      setSuccessDelete(false); // Reset state
     }
-  }, [successDelete, dispatch]);
+  }, [successDelete, setSuccessDelete]);
 
-  const deleteHandler = (id) => {
+  const deleteHandler = useRecoilCallback(({ set, snapshot }) => async (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      dispatch(deleteUser(id));
+      set(userDeleteLoadingState, true);
+      set(userDeleteErrorState, null);
+      set(userDeleteSuccessState, false);
+      try {
+        const currentUserInfo = await snapshot.getPromise(userInfoState);
+        const config = {
+          headers: {
+            Authorization: `Bearer ${currentUserInfo.token}`,
+          },
+        };
+        await axios.delete(`/api/users/${id}`, config);
+        set(userDeleteLoadingState, false);
+        set(userDeleteSuccessState, true);
+        setUsersRefetch(v => v + 1); // Trigger refetch
+      } catch (error) {
+        const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+        set(userDeleteLoadingState, false);
+        set(userDeleteErrorState, message);
+      }
     }
-  };
+  });
 
   return (
     <div>
@@ -45,9 +72,9 @@ const UserListScreen = () => {
         <Loader />
       ) : error ? (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+          {error?.message || 'An error occurred'}
         </div>
-      ) : (
+      ) : state === 'hasValue' && (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">

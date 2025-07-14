@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { login, clearError } from '../slices/userSlice';
+import { useRecoilValue, useRecoilCallback, useSetRecoilState } from 'recoil';
+import { userInfoState, userLoginLoadingState, userLoginErrorState } from '../state/userState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { FaGoogle, FaGithub, FaEnvelope, FaLock } from 'react-icons/fa';
 import { Skeleton } from '@/components/ui/skeleton';
+import axios from 'axios';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -14,11 +15,14 @@ const LoginScreen = () => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { loading, error, userInfo } = useSelector((state) => state.user);
+  const loading = useRecoilValue(userLoginLoadingState);
+  const error = useRecoilValue(userLoginErrorState);
+  const userInfo = useRecoilValue(userInfoState);
+  const setError = useSetRecoilState(userLoginErrorState);
+
 
   const redirect = location.search ? location.search.split('=')[1] : '/';
 
@@ -28,9 +32,9 @@ const LoginScreen = () => {
     }
     
     return () => {
-      dispatch(clearError());
+        setError(null);
     };
-  }, [navigate, userInfo, redirect, dispatch]);
+  }, [navigate, userInfo, redirect, setError]);
 
   const validateForm = () => {
     let isValid = true;
@@ -58,12 +62,25 @@ const LoginScreen = () => {
     return isValid;
   };
 
-  const submitHandler = (e) => {
+  const submitHandler = useRecoilCallback(({ set }) => async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      dispatch(login({ email, password }));
+        set(userLoginLoadingState, true);
+        set(userLoginErrorState, null);
+        try {
+            const config = {
+                headers: { 'Content-Type': 'application/json' },
+            };
+            const { data } = await axios.post('/api/users/login', { email, password }, config);
+            set(userInfoState, data);
+            set(userLoginLoadingState, false);
+        } catch (error) {
+            const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+            set(userLoginErrorState, message);
+            set(userLoginLoadingState, false);
+        }
     }
-  };
+  });
 
   // Function to handle OAuth login
   const handleOAuthLogin = (provider) => {

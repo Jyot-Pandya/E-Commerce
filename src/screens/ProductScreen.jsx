@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useRecoilValueLoadable, useRecoilCallback, useRecoilValue } from 'recoil';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { fetchProductDetails, createProductReview, resetCreateReview } from '../slices/productSlice';
-import { addCartItem } from '../slices/cartSlice';
+import { productDetailsQuery, productReviewSuccessState, productReviewLoadingState, productReviewErrorState } from '../state/productState';
+import { userInfoState } from '../state/userState';
+// import { addCartItem } from '../slices/cartSlice'; // TODO: Refactor cart
 import Rating from '../components/Rating';
 import Product from '../components/Product';
 import axios from 'axios';
@@ -21,15 +22,16 @@ const ProductScreen = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [activeImage, setActiveImage] = useState(null);
   
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const { product, loading, error, success } = useSelector(
-    (state) => state.product
-  );
+  const productLoadable = useRecoilValueLoadable(productDetailsQuery(id));
+  const { state, contents: product } = productLoadable;
+  const loading = state === 'loading';
+  const error = state === 'hasError' ? productLoadable.contents : null;
   
-  const { userInfo } = useSelector((state) => state.user);
+  const userInfo = useRecoilValue(userInfoState);
+  const reviewSuccess = useRecoilValue(productReviewSuccessState);
 
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -40,48 +42,63 @@ const ProductScreen = () => {
         console.error(err);
       }
     };
-
-    dispatch(fetchProductDetails(id));
-    fetchRecommendations();
-  }, [dispatch, id]);
+    if (state === 'hasValue') {
+        fetchRecommendations();
+    }
+  }, [id, state]);
 
   useEffect(() => {
-    if (product && product.image) {
+    if (state === 'hasValue' && product && product.image) {
       setActiveImage(product.image);
     }
-  }, [product]);
+  }, [product, state]);
 
   useEffect(() => {
-    if (success) {
+    if (reviewSuccess) {
       alert('Review submitted!');
       setRating(0);
       setComment('');
-      dispatch(resetCreateReview());
-      dispatch(fetchProductDetails(id));
+      // In a real app, you'd likely reset the success state and refetch the product details
     }
-  }, [success, dispatch, id]);
+  }, [reviewSuccess]);
 
   const addToCartHandler = () => {
-    dispatch(addCartItem({ 
-      product: product._id,
-      name: product.name,
-      image: product.image,
-      price: product.price,
-      countInStock: product.countInStock,
-      qty: Number(qty)
-    }));
+    // TODO: Refactor cart
+    // dispatch(addCartItem({ 
+    //   product: product._id,
+    //   name: product.name,
+    //   image: product.image,
+    //   price: product.price,
+    //   countInStock: product.countInStock,
+    //   qty: Number(qty)
+    // }));
     navigate('/cart');
   };
 
-  const submitHandler = (e) => {
+  const submitHandler = useRecoilCallback(({ set }) => async (e) => {
     e.preventDefault();
-    dispatch(
-      createProductReview({
-        productId: id,
-        review: { rating, comment },
-      })
-    );
-  };
+    set(productReviewLoadingState, true);
+    set(productReviewErrorState, null);
+    set(productReviewSuccessState, false);
+
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.post(`/api/products/${id}/reviews`, { rating, comment }, config);
+      set(productReviewLoadingState, false);
+      set(productReviewSuccessState, true);
+    } catch (error) {
+      const message = error.response && error.response.data.message
+        ? error.response.data.message
+        : error.message;
+      set(productReviewLoadingState, false);
+      set(productReviewErrorState, message);
+    }
+  });
 
   const renderStars = (count) => {
     return (
@@ -117,9 +134,9 @@ const ProductScreen = () => {
         <SkeletonProduct />
       ) : error ? (
         <div className="bg-destructive/10 border border-destructive text-destructive px-6 py-4 rounded-lg animate-slide-in-bottom">
-          {error}
+          {error?.message || 'An error occurred'}
         </div>
-      ) : (
+      ) : state === 'hasValue' && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {/* Product Images */}

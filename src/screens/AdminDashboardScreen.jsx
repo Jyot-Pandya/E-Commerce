@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useRecoilValue } from 'recoil';
+import { userInfoState } from '../state/userState';
 import axios from 'axios';
 import Loader from '../components/Loader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +21,7 @@ const AdminDashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { userInfo } = useSelector((state) => state.user);
+  const userInfo = useRecoilValue(userInfoState);
 
   useEffect(() => {
     const fetchDashboardData = async () => {

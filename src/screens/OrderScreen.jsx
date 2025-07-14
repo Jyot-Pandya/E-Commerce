@@ -1,38 +1,66 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useRecoilValue, useRecoilValueLoadable, useRecoilCallback, useSetRecoilState } from 'recoil';
 import {
-  getOrderDetails,
-  payOrder,
-  deliverOrder,
-  resetOrderPay,
-  resetOrderDeliver,
-} from '../slices/orderSlice';
+  orderDetailsQuery,
+  orderPayLoadingState,
+  orderPayErrorState,
+  orderPaySuccessState,
+  orderDeliverLoadingState,
+  orderDeliverErrorState,
+  orderDeliverSuccessState,
+  orderDetailsRefetchState,
+} from '../state/orderState';
+import { userInfoState } from '../state/userState';
 import Loader from '../components/Loader';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 
 const OrderScreen = () => {
   const { id: orderId } = useParams();
-  const dispatch = useDispatch();
+  
+  const userInfo = useRecoilValue(userInfoState);
+  const orderLoadable = useRecoilValueLoadable(orderDetailsQuery(orderId));
+  const { state: orderState, contents: order } = orderLoadable;
+  
+  const loadingPay = useRecoilValue(orderPayLoadingState);
+  const successPay = useRecoilValue(orderPaySuccessState);
+  
+  const loadingDeliver = useRecoilValue(orderDeliverLoadingState);
+  const successDeliver = useRecoilValue(orderDeliverSuccessState);
 
-  const {
-    order,
-    loading,
-    error,
-    success: successPay,
-    loading: loadingPay,
-    successDeliver,
-  } = useSelector((state) => state.order);
-  const { userInfo } = useSelector((state) => state.user);
+  const setOrderDetailsRefetch = useSetRecoilState(orderDetailsRefetchState);
+  const setSuccessPay = useSetRecoilState(orderPaySuccessState);
+  const setSuccessDeliver = useSetRecoilState(orderDeliverSuccessState);
 
   useEffect(() => {
-    if (!order || order._id !== orderId || successPay || successDeliver) {
-      dispatch(resetOrderPay());
-      dispatch(resetOrderDeliver());
-      dispatch(getOrderDetails(orderId));
+    if (successPay || successDeliver) {
+      setSuccessPay(false);
+      setSuccessDeliver(false);
+      setOrderDetailsRefetch(v => v + 1);
     }
-  }, [dispatch, orderId, successPay, successDeliver, order]);
+  }, [successPay, successDeliver, setSuccessPay, setSuccessDeliver, setOrderDetailsRefetch]);
+
+  const payOrderCallback = useRecoilCallback(({ set }) => async (paymentResult) => {
+    set(orderPayLoadingState, true);
+    set(orderPayErrorState, null);
+    set(orderPaySuccessState, false);
+    try {
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${userInfo.token}`,
+            },
+        };
+        await axios.put(`/api/orders/${orderId}/pay`, paymentResult, config);
+        set(orderPayLoadingState, false);
+        set(orderPaySuccessState, true);
+    } catch (error) {
+        const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+        set(orderPayLoadingState, false);
+        set(orderPayErrorState, message);
+    }
+  });
 
   const paymentHandler = async () => {
     try {
@@ -61,7 +89,7 @@ const OrderScreen = () => {
             update_time: new Date().toISOString(),
             payer: { email_address: userInfo.email },
           };
-          dispatch(payOrder({ orderId, paymentResult }));
+          payOrderCallback(paymentResult);
         },
         prefill: {
           name: userInfo.name,
@@ -79,9 +107,25 @@ const OrderScreen = () => {
     }
   };
 
-  const deliverHandler = () => {
-    dispatch(deliverOrder(orderId));
-  };
+  const deliverHandler = useRecoilCallback(({ set }) => async () => {
+    set(orderDeliverLoadingState, true);
+    set(orderDeliverErrorState, null);
+    set(orderDeliverSuccessState, false);
+    try {
+        const config = {
+            headers: {
+                Authorization: `Bearer ${userInfo.token}`,
+            },
+        };
+        await axios.put(`/api/orders/${orderId}/deliver`, {}, config);
+        set(orderDeliverLoadingState, false);
+        set(orderDeliverSuccessState, true);
+    } catch (error) {
+        const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+        set(orderDeliverLoadingState, false);
+        set(orderDeliverErrorState, message);
+    }
+  });
 
   const downloadInvoiceHandler = async () => {
     try {
@@ -104,21 +148,22 @@ const OrderScreen = () => {
     }
   };
   
-  if (!order) {
+  if (orderState === 'loading') {
     return <Loader />;
+  }
+  if (orderState === 'hasError') {
+    return <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{order?.message}</div>
+  }
+
+  if (!order) {
+    return null; // Should be handled by loading/error state
   }
 
   order.itemsPrice = order.orderItems
     .reduce((acc, item) => acc + item.price * item.qty, 0)
     .toFixed(2);
 
-  return loading ? (
-    <Loader />
-  ) : error ? (
-    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-      {error}
-    </div>
-  ) : (
+  return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Order {order._id}</h1>
       
@@ -252,18 +297,17 @@ const OrderScreen = () => {
                 </div>
               )}
               
-              {userInfo &&
-                userInfo.isAdmin &&
-                order.isPaid &&
-                !order.isDelivered && (
+              {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (
+                <div className="mt-4">
+                  {loadingDeliver && <Loader />}
                   <Button
-                    type="button"
-                    className="w-full mt-4"
                     onClick={deliverHandler}
+                    className="w-full"
                   >
                     Mark As Delivered
                   </Button>
-                )}
+                </div>
+              )}
             </div>
           </div>
         </div>

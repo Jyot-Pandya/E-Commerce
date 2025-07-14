@@ -1,83 +1,78 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { getUserDetails, updateUser, resetUserUpdate } from '../slices/userSlice';
+import { useRecoilValue, useRecoilValueLoadable, useRecoilCallback, useSetRecoilState } from 'recoil';
+import {
+  userInfoState,
+  userDetailsQuery,
+  userUpdateLoadingState,
+  userUpdateErrorState,
+  userUpdateSuccessState,
+} from '../state/userState';
 import Loader from '../components/Loader';
 import Message from '../components/Message'; // Assuming you have a Message component
+import axios from 'axios';
 
 const UserEditScreen = () => {
   const { id: userId } = useParams();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
 
-  console.log('UserEditScreen rendering with userId:', userId);
+  const userInfo = useRecoilValue(userInfoState);
+  const userDetailsLoadable = useRecoilValueLoadable(userDetailsQuery(userId));
+  const { state: userDetailsStateValue, contents: userDetails } = userDetailsLoadable;
 
-  const {
-    loading: loadingUserDetails,
-    error: errorUserDetails,
-    user: userDetails,
-  } = useSelector((state) => {
-    console.log('User details from state:', state.user);
-    return state.user;
-  });
-
-  const {
-    loading: loadingUpdate,
-    error: errorUpdate,
-    success: successUpdate,
-  } = useSelector((state) => {
-    console.log('Update state:', {
-      loading: state.user.loadingUpdate,
-      error: state.user.errorUpdate,
-      success: state.user.successUpdate
-    });
-    return {
-      loading: state.user.loadingUpdate,
-      error: state.user.errorUpdate,
-      success: state.user.successUpdate,
-    };
-  });
-
-  const { userInfo } = useSelector((state) => state.user);
-
+  const loadingUpdate = useRecoilValue(userUpdateLoadingState);
+  const errorUpdate = useRecoilValue(userUpdateErrorState);
+  const successUpdate = useRecoilValue(userUpdateSuccessState);
+  const setSuccessUpdate = useSetRecoilState(userUpdateSuccessState);
+  
   useEffect(() => {
-    console.log('useEffect running with:', {
-      userInfo: userInfo ? 'exists' : 'missing',
-      userDetails: userDetails ? 'exists' : 'missing',
-      successUpdate
-    });
-
     if (!userInfo || !userInfo.isAdmin) {
-      console.log('User not admin, redirecting to login');
       navigate('/login');
       return;
     }
 
     if (successUpdate) {
-      console.log('Update successful, redirecting to user list');
-      dispatch(resetUserUpdate());
+      setSuccessUpdate(false);
       navigate('/admin/userlist');
     } else {
-      if (!userDetails || userDetails._id !== userId) {
-        console.log('Fetching user details for:', userId);
-        dispatch(getUserDetails(userId));
-      } else {
-        console.log('Setting form data from user details');
-        setName(userDetails.name);
-        setEmail(userDetails.email);
-        setIsAdmin(userDetails.isAdmin);
+      if (userDetailsStateValue === 'hasValue' && userDetails) {
+        if (!userDetails || userDetails._id !== userId) {
+          // This case should not happen if selector works correctly
+        } else {
+            setName(userDetails.name);
+            setEmail(userDetails.email);
+            setIsAdmin(userDetails.isAdmin);
+        }
       }
     }
-  }, [dispatch, navigate, userId, userDetails, successUpdate, userInfo]);
+  }, [navigate, userId, userDetails, successUpdate, userInfo, setSuccessUpdate, userDetailsStateValue]);
 
-  const submitHandler = (e) => {
+  const submitHandler = useRecoilCallback(({ set, snapshot }) => async (e) => {
     e.preventDefault();
-    dispatch(updateUser({ _id: userId, name, email, isAdmin }));
-  };
+    set(userUpdateLoadingState, true);
+    set(userUpdateErrorState, null);
+    set(userUpdateSuccessState, false);
+    try {
+      const currentUserInfo = await snapshot.getPromise(userInfoState);
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUserInfo.token}`,
+        },
+      };
+      await axios.put(`/api/users/${userId}`, { _id: userId, name, email, isAdmin }, config);
+      set(userUpdateLoadingState, false);
+      set(userUpdateSuccessState, true);
+    } catch (error) {
+      const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+      set(userUpdateLoadingState, false);
+      set(userUpdateErrorState, message);
+    }
+  });
 
   return (
     <div className="container mx-auto px-4">
@@ -91,10 +86,10 @@ const UserEditScreen = () => {
           {loadingUpdate && <Loader />}
           {errorUpdate && <Message variant="danger">{errorUpdate}</Message>}
           
-          {loadingUserDetails ? (
+          {userDetailsStateValue === 'loading' ? (
             <Loader />
-          ) : errorUserDetails ? (
-            <Message variant="danger">{errorUserDetails}</Message>
+          ) : userDetailsStateValue === 'hasError' ? (
+            <Message variant="danger">{userDetails?.message || 'An error occurred'}</Message>
           ) : (
             <form onSubmit={submitHandler} className="bg-white p-8 rounded-lg shadow-xl">
               <div className="mb-4">

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../slices/userSlice';
-import { fetchCategories } from '../slices/productSlice';
+import { useRecoilValue, useRecoilCallback, useResetRecoilState, useRecoilValueLoadable } from 'recoil';
+import { userInfoState } from '../state/userState';
+import { cartState } from '../state/cartState';
+import { categoriesQuery } from '../state/productState';
 import { FaShoppingCart, FaUser, FaSearch, FaCog, FaClipboardList, FaSignOutAlt, FaUserCircle, FaBars, FaTimes } from 'react-icons/fa';
 
 const Header = () => {
@@ -11,21 +12,21 @@ const Header = () => {
   const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  const { userInfo } = useSelector((state) => state.user);
-  const { cartItems } = useSelector((state) => state.cart);
-  const { categories } = useSelector((state) => state.product);
+  const userInfo = useRecoilValue(userInfoState);
+  const cartItems = useRecoilValue(cartState);
+  const categoriesLoadable = useRecoilValueLoadable(categoriesQuery);
+  const { state: categoriesState, contents: categories } = categoriesLoadable;
 
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
-
-  const logoutHandler = () => {
-    dispatch(logout());
+  const resetUserInfo = useResetRecoilState(userInfoState);
+  const resetCart = useResetRecoilState(cartState);
+  
+  const logoutHandler = useRecoilCallback(({ reset }) => () => {
+    reset(userInfoState);
+    reset(cartState);
     navigate('/login');
-  };
+  });
 
   const toggleProfileDropdown = () => {
     setProfileDropdownOpen(!profileDropdownOpen);
@@ -132,7 +133,7 @@ const Header = () => {
               >
                 Categories <i className="fas fa-caret-down ml-1"></i>
               </button>
-              {categoriesOpen && categories && categories.length > 0 && (
+              {categoriesOpen && categoriesState === 'hasValue' && categories.length > 0 && (
                 <div className="absolute left-0 w-56 bg-white rounded shadow-lg py-2 mt-1 z-10">
                   {categories.map((category) => (
                     <Link
@@ -256,7 +257,7 @@ const Header = () => {
         <div className="px-4 py-2 border-b border-gray-700">
           <div className="font-semibold mb-2">Categories</div>
           <div className="ml-4 space-y-2">
-            {categories && categories.length > 0 ? (
+            {categoriesState === 'hasValue' && categories.length > 0 ? (
               categories.map((category) => (
                 <Link
                   key={category}
