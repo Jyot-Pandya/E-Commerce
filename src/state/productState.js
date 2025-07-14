@@ -120,10 +120,15 @@ export const productsQuery = selectorFamily({
     key: 'productsQuery',
     get: ({ keyword = '', pageNumber = 1, category = '' }) => async ({get}) => {
         get(productsRefetchState); // depend on this atom
-        const { data } = await axios.get(
-            `/api/products?keyword=${keyword}&pageNumber=${pageNumber}${category ? `&category=${category}` : ''}`
-        );
-        return data;
+        try {
+            const { data } = await axios.get(
+                `/api/products?keyword=${keyword}&pageNumber=${pageNumber}${category ? `&category=${category}` : ''}`
+            );
+            return data;
+        } catch (error) {
+            const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+            throw new Error(message);
+        }
     },
 });
 
