@@ -16,7 +16,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 
 // Load environment variables
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+// dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // Initialize express app
 const app = express();
