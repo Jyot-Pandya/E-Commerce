@@ -55,21 +55,6 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Serve static assets in both development and production
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// Serve static assets if in production
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
-  });
-} else {
-  // Handle SPA routing in development mode
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
-  });
-}
-
 // Error middleware
 app.use(notFound);
 app.use(errorHandler);
