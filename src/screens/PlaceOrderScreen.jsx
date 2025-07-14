@@ -59,7 +59,7 @@ const PlaceOrderScreen = () => {
         };
         const orderData = {
             orderItems: cartItems,
-            shippingAddress,
+            shippingAddress: { ...shippingAddress },
             paymentMethod,
             itemsPrice,
             taxPrice,
@@ -78,13 +78,13 @@ const PlaceOrderScreen = () => {
   });
 
   return (
-    <div>
+    <div className='dark:text-white'>
       <h1 className="text-3xl font-bold mb-6">Place Order</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           {/* Shipping */}
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md mb-6">
             <h2 className="text-xl font-semibold mb-3">Shipping</h2>
             <p className="mb-2">
               <strong>Address: </strong>
@@ -94,7 +94,7 @@ const PlaceOrderScreen = () => {
           </div>
           
           {/* Payment Method */}
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md mb-6">
             <h2 className="text-xl font-semibold mb-3">Payment Method</h2>
             <p className="mb-2">
               <strong>Method: </strong>
@@ -103,7 +103,7 @@ const PlaceOrderScreen = () => {
           </div>
           
           {/* Order Items */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-3">Order Items</h2>
             
             {cartItems.length === 0 ? (
@@ -143,7 +143,7 @@ const PlaceOrderScreen = () => {
         
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4 border-b pb-2">
               Order Summary
             </h2>

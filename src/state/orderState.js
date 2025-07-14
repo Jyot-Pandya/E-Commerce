@@ -49,6 +49,21 @@ export const orderDeliverLoadingState = atom({ key: 'orderDeliverLoadingState', 
 export const orderDeliverErrorState = atom({ key: 'orderDeliverErrorState', default: null });
 export const orderDeliverSuccessState = atom({ key: 'orderDeliverSuccessState', default: false });
 
+export const orderCancelLoadingState = atom({
+  key: 'orderCancelLoadingState',
+  default: false,
+});
+
+export const orderCancelErrorState = atom({
+  key: 'orderCancelErrorState',
+  default: null,
+});
+
+export const orderCancelSuccessState = atom({
+  key: 'orderCancelSuccessState',
+  default: false,
+});
+
 // Orders List (Admin)
 export const ordersListRefetchState = atom({ key: 'ordersListRefetchState', default: 0 });
 export const ordersListQuery = selector({

@@ -98,6 +98,11 @@ const LoginScreen = () => {
         </CardHeader>
         
         <CardContent className="p-6 pt-8">
+          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6" role="alert">
+            <p className="font-bold">Demo Credentials</p>
+            <p><strong>Admin:</strong> admin@example.com / 123456</p>
+            <p><strong>User:</strong> john@example.com / 123456</p>
+          </div>
           {error && (
             <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg mb-6 animate-slide-in-bottom">
               {error}

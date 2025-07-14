@@ -3,7 +3,7 @@ import { useRecoilValueLoadable, useRecoilCallback, useRecoilValue } from 'recoi
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { productDetailsQuery, productReviewSuccessState, productReviewLoadingState, productReviewErrorState } from '../state/productState';
 import { userInfoState } from '../state/userState';
-// import { addCartItem } from '../slices/cartSlice'; // TODO: Refactor cart
+import { cartState } from '../state/cartState';
 import Rating from '../components/Rating';
 import Product from '../components/Product';
 import axios from 'axios';
@@ -62,18 +62,29 @@ const ProductScreen = () => {
     }
   }, [reviewSuccess]);
 
-  const addToCartHandler = () => {
-    // TODO: Refactor cart
-    // dispatch(addCartItem({ 
-    //   product: product._id,
-    //   name: product.name,
-    //   image: product.image,
-    //   price: product.price,
-    //   countInStock: product.countInStock,
-    //   qty: Number(qty)
-    // }));
+  const addToCartHandler = useRecoilCallback(({snapshot, set}) => async () => {
+    const cart = await snapshot.getPromise(cartState);
+    const existItem = cart.find((x) => x.product === product._id);
+
+    if (existItem) {
+      const newCart = cart.map((x) =>
+        x.product === existItem.product ? { ...existItem, qty: existItem.qty + qty } : x
+      );
+      set(cartState, newCart);
+    } else {
+      const newItem = {
+        product: product._id,
+        name: product.name,
+        image: product.image,
+        price: product.price,
+        countInStock: product.countInStock,
+        qty,
+      };
+      set(cartState, [...cart, newItem]);
+    }
+
     navigate('/cart');
-  };
+  });
 
   const submitHandler = useRecoilCallback(({ set }) => async (e) => {
     e.preventDefault();

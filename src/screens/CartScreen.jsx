@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useRecoilState, useRecoilValue, useRecoilCallback } from 'recoil';
 import { cartState, cartTotalState } from '../state/cartState';
+import { userInfoState } from '../state/userState';
 import axios from 'axios';
 
 const CartScreen = () => {
@@ -13,6 +14,7 @@ const CartScreen = () => {
 
   const [cartItems, setCartItems] = useRecoilState(cartState);
   const { itemsPrice, totalPrice } = useRecoilValue(cartTotalState);
+  const userInfo = useRecoilValue(userInfoState);
 
   const addToCart = useRecoilCallback(({ set }) => async (id, qty) => {
     const { data } = await axios.get(`/api/products/${id}`);
@@ -53,42 +55,46 @@ const CartScreen = () => {
   }
 
   const checkoutHandler = () => {
+    if (userInfo) {
+      navigate('/shipping');
+    } else {
     navigate('/login?redirect=shipping');
+    }
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2">
-        <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
+        <h1 className="text-3xl font-bold mb-6 text-foreground">Shopping Cart</h1>
         
         {cartItems.length === 0 ? (
-          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
+          <div className="bg-blue-900/10 border border-blue-500/20 text-blue-500 px-4 py-3 rounded">
             Your cart is empty. <Link to="/" className="underline">Go Back</Link>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-card rounded-lg shadow-md overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-muted">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Product
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Price
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Quantity
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Total
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Remove
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-card divide-y divide-border">
                   {cartItems.map((item) => (
                     <tr key={item.product}>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -103,21 +109,21 @@ const CartScreen = () => {
                           <div className="ml-4">
                             <Link
                               to={`/product/${item.product}`}
-                              className="text-gray-900 font-medium hover:text-gray-600"
+                              className="text-card-foreground font-medium hover:text-muted-foreground"
                             >
                               {item.name}
                             </Link>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-foreground">
                         ₹{item.price.toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <select
                           value={item.qty}
                           onChange={(e) => updateQtyHandler(item, e.target.value)}
-                          className="border rounded p-2"
+                          className="border rounded p-2 bg-background border-border"
                         >
                           {[...Array(item.countInStock).keys()].map((x) => (
                             <option key={x + 1} value={x + 1}>
@@ -126,7 +132,7 @@ const CartScreen = () => {
                           ))}
                         </select>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-foreground">
                         ₹{(item.price * item.qty).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -148,16 +154,16 @@ const CartScreen = () => {
       
       {cartItems.length > 0 && (
         <div className="lg:col-span-1">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+          <div className="bg-card p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold mb-4 text-foreground">Order Summary</h2>
             
-            <div className="mb-4 flex justify-between">
+            <div className="mb-4 flex justify-between text-muted-foreground">
               <span>Items ({cartItems.reduce((acc, item) => acc + item.qty, 0)}):</span>
-              <span>₹{itemsPrice.toFixed(2)}</span>
+              <span className="text-foreground">₹{itemsPrice.toFixed(2)}</span>
             </div>
             
-            <div className="border-t pt-4 mt-4">
-              <div className="flex justify-between font-bold text-lg">
+            <div className="border-t border-border pt-4 mt-4">
+              <div className="flex justify-between font-bold text-lg text-foreground">
                 <span>Total:</span>
                 <span>₹{totalPrice.toFixed(2)}</span>
               </div>
@@ -165,7 +171,7 @@ const CartScreen = () => {
             
             <button
               onClick={checkoutHandler}
-              className="w-full mt-6 bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700"
+              className="w-full mt-6 bg-primary text-primary-foreground py-2 px-4 rounded hover:bg-primary/90"
               disabled={cartItems.length === 0}
             >
               Proceed to Checkout

@@ -6,7 +6,7 @@ import Product from '../components/Product';
 import Loader from '../components/Loader';
 import ProductCarousel from '../components/ProductCarousel';
 import CategoryFilter from '../components/CategoryFilter';
-import TestComponent from '../components/ui/test-component';
+
 import { FaShoppingCart, FaSearch } from 'react-icons/fa';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,7 @@ const HomeScreen = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <TestComponent />
+     
       {!keyword && <ProductCarousel />}
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

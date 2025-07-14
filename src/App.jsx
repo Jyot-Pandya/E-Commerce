@@ -1,5 +1,6 @@
-import React, { Suspense, Component } from 'react';
+import React, { Suspense } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { ErrorBoundary } from 'react-error-boundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomeScreen from './screens/HomeScreen';
@@ -20,46 +21,29 @@ import OrderListScreen from './screens/OrderListScreen';
 import OAuthCallbackScreen from './screens/OAuthCallbackScreen';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
 import { ThemeToggle } from './components/ui/theme-provider';
+import { StagewiseToolbar } from '@stagewise/toolbar-react';
+import ReactPlugin from '@stagewise-plugins/react';
 
-// Error boundary to catch rendering errors
-class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error("App error:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
-          <div className="max-w-md w-full p-6 bg-card rounded-lg shadow-lg">
-            <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
-            <p className="mb-4">The application encountered an error and couldn't continue.</p>
-            <p className="text-sm bg-muted p-2 rounded mb-4 overflow-auto max-h-40">
-              {this.state.error?.toString()}
-            </p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-            >
-              Reload Page
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
+// Error Fallback Component
+const ErrorFallback = ({ error, resetErrorBoundary }) => {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
+      <div className="max-w-md w-full p-6 bg-card rounded-lg shadow-lg">
+        <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+        <p className="mb-4">The application encountered an error and couldn't continue.</p>
+        <p className="text-sm bg-muted p-2 rounded mb-4 overflow-auto max-h-40">
+          {error.message}
+        </p>
+        <button 
+          onClick={resetErrorBoundary} 
+          className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Loading fallback
 const LoadingFallback = () => (
@@ -72,7 +56,10 @@ const LoadingFallback = () => (
 
 function App() {
   return (
-    <ErrorBoundary>
+    <ErrorBoundary 
+      FallbackComponent={ErrorFallback}
+      onReset={() => window.location.reload()}
+    >
       <Suspense fallback={<LoadingFallback />}>
       <Router>
           <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -111,6 +98,7 @@ function App() {
             <div className="fixed bottom-6 right-6 z-50">
               <ThemeToggle className="bg-background shadow-lg rounded-full p-3 hover:shadow-xl transition-all duration-300" />
             </div>
+            <StagewiseToolbar config={{ plugins: [ReactPlugin] }} />
         </div>
       </Router>
       </Suspense>
