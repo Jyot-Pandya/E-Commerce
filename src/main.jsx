@@ -12,10 +12,6 @@ window.addEventListener('error', (event) => {
   console.error('Global error caught:', event.error);
 });
 
-// Force light theme by default to avoid blank screen
-document.documentElement.classList.remove('dark');
-document.documentElement.classList.add('light');
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <RecoilRoot>

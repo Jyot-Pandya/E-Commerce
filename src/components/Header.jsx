@@ -5,6 +5,7 @@ import { userInfoState } from '../state/userState';
 import { cartState } from '../state/cartState';
 import { categoriesQuery } from '../state/productState';
 import { FaShoppingCart, FaUser, FaSearch, FaCog, FaClipboardList, FaSignOutAlt, FaUserCircle, FaBars, FaTimes } from 'react-icons/fa';
+import { ThemeToggle } from './ui/theme-provider';
 
 const Header = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -134,12 +135,12 @@ const Header = () => {
                 Categories <i className="fas fa-caret-down ml-1"></i>
               </button>
               {categoriesOpen && categoriesState === 'hasValue' && categories.length > 0 && (
-                <div className="absolute left-0 w-56 bg-white rounded shadow-lg py-2 mt-1 z-10">
+                <div className="absolute left-0 w-56 bg-card rounded shadow-lg py-2 mt-1 z-10 border border-border">
                   {categories.map((category) => (
                     <Link
                       key={category}
                       to={`/category/${category}`}
-                      className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                      className="block px-4 py-2 text-card-foreground hover:bg-accent hover:text-accent-foreground"
                       onClick={() => setCategoriesOpen(false)}
                     >
                       {category}
@@ -171,18 +172,18 @@ const Header = () => {
                   {userInfo.name} <i className="fas fa-caret-down ml-1"></i>
                 </button>
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 w-48 bg-white rounded shadow-lg py-2 mt-1 z-10">
+                  <div className="absolute right-0 w-48 bg-card rounded shadow-lg py-2 mt-1 z-10 border border-border">
                     <Link
                       to="/profile"
-                      className="block px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center"
+                      className="flex items-center px-4 py-2 text-card-foreground hover:bg-accent hover:text-accent-foreground"
                     >
-                      <FaUser className="mr-2 text-gray-600" /> Profile
+                      <FaUser className="mr-2 text-muted-foreground" /> Profile
                     </Link>
                     <button
                       onClick={logoutHandler}
-                      className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center"
+                      className="flex items-center w-full text-left px-4 py-2 text-card-foreground hover:bg-accent hover:text-accent-foreground"
                     >
-                      <FaSignOutAlt className="mr-2 text-gray-600" /> Logout
+                      <FaSignOutAlt className="mr-2 text-muted-foreground" /> Logout
                     </button>
                   </div>
                 )}
@@ -203,41 +204,44 @@ const Header = () => {
                   <FaCog className="mr-1" /> Admin <i className="fas fa-caret-down ml-1"></i>
                 </button>
                 {adminDropdownOpen && (
-                  <div className="absolute right-0 w-48 bg-white rounded shadow-lg py-2 mt-1 z-10">
+                  <div className="absolute right-0 w-48 bg-card rounded shadow-lg py-2 mt-1 z-10 border border-border">
                     <Link
                       to="/admin/dashboard"
-                      className="block px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center"
+                      className="flex items-center px-4 py-2 text-card-foreground hover:bg-accent hover:text-accent-foreground"
                     >
-                      <FaCog className="mr-2 text-gray-600" /> Dashboard
+                      <FaCog className="mr-2 text-muted-foreground" /> Dashboard
                     </Link>
                     <Link
                       to="/admin/userlist"
-                      className="block px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center"
+                      className="flex items-center px-4 py-2 text-card-foreground hover:bg-accent hover:text-accent-foreground"
                     >
-                      <FaUser className="mr-2 text-gray-600" /> Users
+                      <FaUser className="mr-2 text-muted-foreground" /> Users
                     </Link>
                     <Link
                       to="/admin/productlist"
-                      className="block px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center"
+                      className="flex items-center px-4 py-2 text-card-foreground hover:bg-accent hover:text-accent-foreground"
                     >
-                      <FaShoppingCart className="mr-2 text-gray-600" /> Products
+                      <FaShoppingCart className="mr-2 text-muted-foreground" /> Products
                     </Link>
                     <Link
                       to="/admin/orderlist"
-                      className="block px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center"
+                      className="flex items-center px-4 py-2 text-card-foreground hover:bg-accent hover:text-accent-foreground"
                     >
-                      <FaClipboardList className="mr-2 text-gray-600" /> Orders
+                      <FaClipboardList className="mr-2 text-muted-foreground" /> Orders
                     </Link>
                   </div>
                 )}
               </div>
             )}
+            
+            {/* Theme Toggle */}
+            <ThemeToggle className="px-3 py-2 rounded hover:bg-gray-700 transition-colors flex items-center text-white" />
           </div>
         </div>
       </div>
       
       {/* Mobile menu */}
-      <div className={`md:hidden ${mobileMenuOpen ? 'block' : 'hidden'} bg-gray-800 pb-4`}>
+      <div className={`md:hidden ${mobileMenuOpen ? 'block' : 'hidden'} bg-card border-t border-border`}>
         {/* Mobile search */}
         <form onSubmit={submitHandler} className="px-4 mb-4">
           <div className="relative">
@@ -344,6 +348,11 @@ const Header = () => {
               </Link>
             </>
           )}
+          
+          {/* Mobile Theme Toggle */}
+          <div className="px-3 py-2">
+            <ThemeToggle className="w-full flex items-center justify-center px-3 py-2 rounded hover:bg-gray-700 transition-colors text-white" />
+          </div>
         </div>
       </div>
     </header>

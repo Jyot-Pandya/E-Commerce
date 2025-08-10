@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { shippingAddressState } from '../state/cartState';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
 
 const ShippingScreen = () => {
   const shippingAddress = useRecoilValue(shippingAddressState);
@@ -10,88 +12,86 @@ const ShippingScreen = () => {
   const [city, setCity] = useState(shippingAddress?.city || '');
   const [postalCode, setPostalCode] = useState(shippingAddress?.postalCode || '');
   const [country, setCountry] = useState(shippingAddress?.country || '');
+  const [errors, setErrors] = useState({});
   
   const setShippingAddress = useSetRecoilState(shippingAddressState);
   const navigate = useNavigate();
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!address.trim()) newErrors.address = 'Address is required';
+    if (!city.trim()) newErrors.city = 'City is required';
+    if (!postalCode.trim()) newErrors.postalCode = 'Postal code is required';
+    if (!country.trim()) newErrors.country = 'Country is required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const submitHandler = (e) => {
     e.preventDefault();
-    setShippingAddress({ address, city, postalCode, country });
-    navigate('/payment');
+    
+    if (validateForm()) {
+      setShippingAddress({ address, city, postalCode, country });
+      navigate('/payment');
+    }
   };
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center min-h-screen pt-8 bg-background">
       <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6">Shipping</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center text-foreground">Shipping</h1>
         
-        <form onSubmit={submitHandler} className="bg-white p-6 rounded-lg shadow-md">
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="address">
-              Address
-            </label>
-            <input
-              type="text"
-              id="address"
-              placeholder="Enter address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+        <form onSubmit={submitHandler} className="bg-card p-6 rounded-lg shadow-md space-y-4 border border-border">
+          <Input
+            type="text"
+            label="Address"
+            placeholder="Enter address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            error={errors.address}
+            required
+          />
 
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="city">
-              City
-            </label>
-            <input
-              type="text"
-              id="city"
-              placeholder="Enter city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+          <Input
+            type="text"
+            label="City"
+            placeholder="Enter city"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            error={errors.city}
+            required
+          />
 
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="postalCode">
-              Postal Code
-            </label>
-            <input
-              type="text"
-              id="postalCode"
-              placeholder="Enter postal code"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+          <Input
+            type="text"
+            label="Postal Code"
+            placeholder="Enter postal code"
+            value={postalCode}
+            onChange={(e) => setPostalCode(e.target.value)}
+            error={errors.postalCode}
+            required
+          />
 
-          <div className="mb-6">
-            <label className="block text-gray-700 mb-2" htmlFor="country">
-              Country
-            </label>
-            <input
-              type="text"
-              id="country"
-              placeholder="Enter country"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+          <Input
+            type="text"
+            label="Country"
+            placeholder="Enter country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            error={errors.country}
+            required
+          />
 
-          <button
+          <Button
             type="submit"
-            className="w-full bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700"
+            className="w-full"
+            variant="default"
+            size="lg"
           >
             Continue
-          </button>
+          </Button>
         </form>
       </div>
     </div>

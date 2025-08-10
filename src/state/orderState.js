@@ -37,6 +37,9 @@ export const myOrdersListQuery = selector({
     key: 'myOrdersListQuery',
     get: async ({ get }) => {
         const userInfo = get(userInfoState);
+        if (!userInfo || !userInfo.token) {
+            return [];
+        }
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
         const { data } = await axios.get('/api/orders/myorders', config);
         return data;

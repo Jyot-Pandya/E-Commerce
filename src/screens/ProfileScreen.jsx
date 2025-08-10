@@ -8,8 +8,9 @@ import {
     userUpdateProfileErrorState,
     userUpdateProfileSuccessState 
 } from '../state/userState';
-// import { listMyOrders } from '../slices/orderSlice'; // TODO: Refactor orders
+import { myOrdersListQuery } from '../state/orderState';
 import Loader from '../components/Loader';
+import axios from 'axios';
 
 const ProfileScreen = () => {
   const [name, setName] = useState('');
@@ -23,6 +24,12 @@ const ProfileScreen = () => {
   const userInfo = useRecoilValue(userInfoState);
   const userDetailsLoadable = useRecoilValueLoadable(userDetailsQuery('profile'));
   const { state: userDetailsState, contents: user } = userDetailsLoadable;
+  
+  const myOrdersLoadable = useRecoilValueLoadable(myOrdersListQuery);
+  const { state: ordersState, contents: ordersContents } = myOrdersLoadable;
+  const loadingOrders = ordersState === 'loading';
+  const errorOrders = ordersState === 'hasError' ? ordersContents : null;
+  const orders = ordersState === 'hasValue' ? ordersContents : [];
 
   const loading = useRecoilValue(userUpdateProfileLoadingState);
   const error = useRecoilValue(userUpdateProfileErrorState);
@@ -86,31 +93,31 @@ const ProfileScreen = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       <div className="md:col-span-1">
-        <h2 className="text-2xl font-bold mb-6">User Profile</h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">User Profile</h2>
         
         {message && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
             {message}
           </div>
         )}
         
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
         
         {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          <div className="bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-200 px-4 py-3 rounded mb-4">
             Profile Updated Successfully
           </div>
         )}
         
         {(loading || userDetailsState === 'loading') && <Loader />}
         
-        <form onSubmit={submitHandler} className="bg-white p-6 rounded-lg shadow-md">
+        <form onSubmit={submitHandler} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="name">
+            <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="name">
               Name
             </label>
             <input
@@ -119,12 +126,12 @@ const ProfileScreen = () => {
               placeholder="Enter name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
 
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="email">
+            <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="email">
               Email Address
             </label>
             <input
@@ -133,12 +140,12 @@ const ProfileScreen = () => {
               placeholder="Enter email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
 
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="password">
+            <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="password">
               Password
             </label>
             <input
@@ -147,12 +154,12 @@ const ProfileScreen = () => {
               placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
 
           <div className="mb-6">
-            <label className="block text-gray-700 mb-2" htmlFor="confirmPassword">
+            <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="confirmPassword">
               Confirm Password
             </label>
             <input
@@ -161,13 +168,13 @@ const ProfileScreen = () => {
               placeholder="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700"
+            className="w-full bg-gray-800 dark:bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 dark:hover:bg-gray-500 transition duration-200"
           >
             Update
           </button>
@@ -175,78 +182,92 @@ const ProfileScreen = () => {
       </div>
       
       <div className="md:col-span-2">
-        <h2 className="text-2xl font-bold mb-6">My Orders</h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">My Orders</h2>
         
-        {/* {loadingOrders ? (
+        {loadingOrders ? (
           <Loader />
         ) : errorOrders ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {errorOrders}
+          <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded">
+            {errorOrders?.message || 'An error occurred while loading orders'}
           </div>
-        ) : orders && orders.length === 0 ? (
-          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
+        ) : ordersState === 'hasValue' && orders && orders.length === 0 ? (
+          <div className="bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-200 px-4 py-3 rounded">
             You have no orders
           </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        ) : ordersState === 'hasValue' && orders ? (
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       DATE
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       TOTAL
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       PAID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       DELIVERED
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      STATUS
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       ACTIONS
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {orders && orders.map((order) => (
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {orders.map((order) => (
                     <tr key={order._id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {order._id}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {order.createdAt.substring(0, 10)}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        {new Date(order.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        ${order.totalPrice}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        ₹{order.totalPrice}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {order.isPaid ? (
-                          <span className="text-green-600">
-                            {order.paidAt.substring(0, 10)}
+                          <span className="text-green-600 dark:text-green-400">
+                            {new Date(order.paidAt).toLocaleDateString()}
                           </span>
                         ) : (
-                          <span className="text-red-600">Not Paid</span>
+                          <span className="text-red-600 dark:text-red-400">Not Paid</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {order.isDelivered ? (
-                          <span className="text-green-600">
-                            {order.deliveredAt.substring(0, 10)}
+                          <span className="text-green-600 dark:text-green-400">
+                            {new Date(order.deliveredAt).toLocaleDateString()}
                           </span>
                         ) : (
-                          <span className="text-red-600">Not Delivered</span>
+                          <span className="text-red-600 dark:text-red-400">Not Delivered</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {order.isCancelled ? (
+                          <span className="text-red-600 dark:text-red-400 font-semibold">Cancelled</span>
+                        ) : order.isDelivered ? (
+                          <span className="text-green-600 dark:text-green-400 font-semibold">Delivered</span>
+                        ) : order.isPaid ? (
+                          <span className="text-blue-600 dark:text-blue-400 font-semibold">Processing</span>
+                        ) : (
+                          <span className="text-yellow-600 dark:text-yellow-400 font-semibold">Pending</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
                           onClick={() => navigate(`/order/${order._id}`)}
-                          className="bg-gray-800 text-white py-1 px-3 rounded hover:bg-gray-700"
+                          className="bg-gray-800 dark:bg-gray-600 text-white py-1 px-3 rounded hover:bg-gray-700 dark:hover:bg-gray-500 transition duration-200"
                         >
                           Details
                         </button>
@@ -257,7 +278,7 @@ const ProfileScreen = () => {
               </table>
             </div>
           </div>
-        )} */}
+        ) : null}
       </div>
     </div>
   );
