@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { useRecoilValue, useRecoilValueLoadable, useRecoilCallback, useSetRecoilState } from 'recoil';
+import { useRecoilValue, useRecoilValueLoadable, useRecoilCallback, useSetRecoilState, useResetRecoilState } from 'recoil';
 import {
   orderDetailsQuery,
   orderPayLoadingState,
@@ -13,6 +13,9 @@ import {
   orderCancelLoadingState,
   orderCancelErrorState,
   orderCancelSuccessState,
+  createdOrderState,
+  orderCreateSuccessState,
+  clearOrderCacheState,
 } from '../state/orderState';
 import { userInfoState } from '../state/userState';
 import Loader from '../components/Loader';
@@ -39,18 +42,32 @@ const OrderScreen = () => {
   const setSuccessPay = useSetRecoilState(orderPaySuccessState);
   const setSuccessDeliver = useSetRecoilState(orderDeliverSuccessState);
   const setSuccessCancel = useSetRecoilState(orderCancelSuccessState);
+  const setClearOrderCache = useSetRecoilState(clearOrderCacheState);
+  
+  // Reset order creation states to prevent showing old order data
+  const resetCreatedOrder = useResetRecoilState(createdOrderState);
+  const resetOrderCreateSuccess = useResetRecoilState(orderCreateSuccessState);
 
   useEffect(() => {
+    // Clear any old order creation states when viewing an order
+    resetCreatedOrder();
+    resetOrderCreateSuccess();
+    
     if (successPay || successDeliver) {
       setSuccessPay(false);
       setSuccessDeliver(false);
       setOrderDetailsRefetch(v => v + 1);
     }
      if (successCancel) {
+      // Clear all order-related states when order is cancelled
+      resetCreatedOrder();
+      resetOrderCreateSuccess();
+      setOrderDetailsRefetch(v => v + 1); // Force refresh of any cached order data
+      setClearOrderCache(v => v + 1); // Clear all cached order data
       navigate('/');
       setSuccessCancel(false);
     }
-  }, [successPay, successDeliver, successCancel, setSuccessPay, setSuccessDeliver, setOrderDetailsRefetch, setSuccessCancel, navigate]);
+  }, [successPay, successDeliver, successCancel, setSuccessPay, setSuccessDeliver, setOrderDetailsRefetch, setSuccessCancel, navigate, resetCreatedOrder, resetOrderCreateSuccess, setClearOrderCache]);
 
   const payOrderCallback = useRecoilCallback(({ set }) => async (paymentResult) => {
     set(orderPayLoadingState, true);
@@ -282,22 +299,22 @@ const OrderScreen = () => {
             
             <div className="flex justify-between mb-2 dark:text-gray-300">
               <span>Items</span>
-              <span>${mutableOrder.itemsPrice}</span>
+              <span>₹{mutableOrder.itemsPrice}</span>
             </div>
             
             <div className="flex justify-between mb-2 dark:text-gray-300">
               <span>Shipping</span>
-              <span>${mutableOrder.shippingPrice}</span>
+              <span>₹{mutableOrder.shippingPrice}</span>
             </div>
             
             <div className="flex justify-between mb-2 dark:text-gray-300">
               <span>Tax</span>
-              <span>${mutableOrder.taxPrice}</span>
+              <span>₹{mutableOrder.taxPrice}</span>
             </div>
             
             <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2 dark:text-white">
               <span>Total</span>
-              <span>${mutableOrder.totalPrice}</span>
+              <span>₹{mutableOrder.totalPrice}</span>
             </div>
             
             {!mutableOrder.isPaid && (

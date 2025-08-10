@@ -7,6 +7,12 @@ export const orderDetailsRefetchState = atom({
     default: 0,
 });
 
+// Clear order cache utility
+export const clearOrderCacheState = atom({
+    key: 'clearOrderCacheState',
+    default: 0,
+});
+
 // Create Order
 export const orderCreateLoadingState = atom({ key: 'orderCreateLoadingState', default: false });
 export const orderCreateErrorState = atom({ key: 'orderCreateErrorState', default: null });
@@ -19,6 +25,7 @@ export const orderDetailsQuery = selectorFamily({
     key: 'orderDetailsQuery',
     get: (id) => async ({ get }) => {
         get(orderDetailsRefetchState);
+        get(clearOrderCacheState); // This will invalidate cache when incremented
         const userInfo = get(userInfoState);
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
         const { data } = await axios.get(`/api/orders/${id}`, config);

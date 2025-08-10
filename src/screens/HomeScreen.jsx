@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRecoilValueLoadable } from 'recoil';
-import { useParams } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productsQuery } from '../state/productState';
 import Product from '../components/Product';
 import Loader from '../components/Loader';
@@ -16,10 +16,11 @@ import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 
 const HomeScreen = () => {
   const { keyword, pageNumber = 1, category } = useParams();
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState(category || '');
   const [searchInput, setSearchInput] = useState('');
 
-  const productsLoadable = useRecoilValueLoadable(productsQuery({ keyword, pageNumber, category: selectedCategory }));
+  const productsLoadable = useRecoilValueLoadable(productsQuery({ keyword, pageNumber: Number(pageNumber), category: selectedCategory }));
   const { state, contents } = productsLoadable;
   const { products, page, pages } = state === 'hasValue' ? contents : { products: [], page: 1, pages: 1 };
   const loading = state === 'loading';
@@ -44,7 +45,7 @@ const HomeScreen = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      window.location.href = `/search/${searchInput}`;
+      navigate(`/search/${searchInput}`);
     }
   };
 
@@ -145,7 +146,7 @@ const HomeScreen = () => {
                           className="mt-4"
                           onClick={() => {
                             setSelectedCategory('');
-                            window.history.pushState(null, '', '/');
+                            navigate('/');
                           }}
                         >
                           View All Products
@@ -191,9 +192,9 @@ const HomeScreen = () => {
               {pages > 1 && (
                 <div className="flex justify-center mt-8">
                   {[...Array(pages).keys()].map((x) => (
-                    <a
+                    <Link
                       key={x + 1}
-                      href={
+                      to={
                         keyword
                           ? `/search/${keyword}/page/${x + 1}`
                           : selectedCategory
@@ -201,13 +202,13 @@ const HomeScreen = () => {
                           : `/page/${x + 1}`
                       }
                       className={`flex items-center justify-center w-10 h-10 mx-1 rounded-md transition-colors ${
-                        x + 1 === page
+                        x + 1 === Number(page)
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground'
                       }`}
                     >
                       {x + 1}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               )}

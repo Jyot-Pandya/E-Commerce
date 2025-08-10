@@ -27,7 +27,16 @@ const PlaceOrderScreen = () => {
   const order = useRecoilValue(createdOrderState);
   
   const resetCart = useResetRecoilState(cartState);
-  const resetOrderState = useResetRecoilState(createdOrderState); // Example of resetting specific state
+  const resetCreatedOrder = useResetRecoilState(createdOrderState);
+  const resetOrderCreateSuccess = useResetRecoilState(orderCreateSuccessState);
+  const resetOrderCreateError = useResetRecoilState(orderCreateErrorState);
+
+  // Clear any previous order states when component mounts
+  useEffect(() => {
+    resetCreatedOrder();
+    resetOrderCreateSuccess();
+    resetOrderCreateError();
+  }, [resetCreatedOrder, resetOrderCreateSuccess, resetOrderCreateError]);
 
   // Redirect if shipping address is missing
   useEffect(() => {
@@ -41,7 +50,6 @@ const PlaceOrderScreen = () => {
     if (success && order) {
       navigate(`/order/${order._id}`);
       resetCart();
-      // Reset order state after navigation
     }
   }, [success, navigate, order, resetCart]);
 

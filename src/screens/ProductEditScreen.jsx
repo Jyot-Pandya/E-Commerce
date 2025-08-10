@@ -91,27 +91,27 @@ const ProductEditScreen = () => {
 
   return (
     <div>
-      <Link to="/admin/productlist" className="inline-block mb-4 text-gray-600 hover:text-gray-800">
+      <Link to="/admin/productlist" className="inline-block mb-4 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
         <i className="fas fa-arrow-left mr-2"></i> Go Back
       </Link>
       
       <div className="flex justify-center">
         <div className="w-full max-w-lg">
-          <h1 className="text-3xl font-bold mb-6">Edit Product</h1>
+          <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">Edit Product</h1>
           
           {loadingUpdate && <Loader />}
-          {errorUpdate && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{errorUpdate}</div>}
+          {errorUpdate && <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">{errorUpdate}</div>}
 
           {state === 'loading' ? (
             <Loader />
           ) : state === 'hasError' ? (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
               {productLoadable.contents?.message || 'An error occurred'}
             </div>
           ) : (
-            <form onSubmit={submitHandler} className="bg-white p-6 rounded-lg shadow-md">
+            <form onSubmit={submitHandler} className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2" htmlFor="name">
+                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="name">
                   Name
                 </label>
                 <input
@@ -120,13 +120,13 @@ const ProductEditScreen = () => {
                   placeholder="Enter name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2" htmlFor="price">
+                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="price">
                   Price
                 </label>
                 <input
@@ -135,13 +135,13 @@ const ProductEditScreen = () => {
                   placeholder="Enter price"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2" htmlFor="image">
+                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="image">
                   Image
                 </label>
                 <input
@@ -150,7 +150,7 @@ const ProductEditScreen = () => {
                   placeholder="Enter image URL"
                   value={image}
                   onChange={(e) => setImage(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required
                 />
                 <div className="mt-2">
@@ -158,13 +158,13 @@ const ProductEditScreen = () => {
                     type="file"
                     id="image-file"
                     onChange={uploadFileHandler}
-                    className="w-full p-2"
+                    className="w-full p-2 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2" htmlFor="brand">
+                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="brand">
                   Brand
                 </label>
                 <input
@@ -173,13 +173,13 @@ const ProductEditScreen = () => {
                   placeholder="Enter brand"
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2" htmlFor="countInStock">
+                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="countInStock">
                   Count In Stock
                 </label>
                 <input
@@ -188,13 +188,13 @@ const ProductEditScreen = () => {
                   placeholder="Enter count in stock"
                   value={countInStock}
                   onChange={(e) => setCountInStock(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2" htmlFor="category">
+                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="category">
                   Category
                 </label>
                 <input
@@ -203,13 +203,13 @@ const ProductEditScreen = () => {
                   placeholder="Enter category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required
                 />
               </div>
 
               <div className="mb-6">
-                <label className="block text-gray-700 mb-2" htmlFor="description">
+                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="description">
                   Description
                 </label>
                 <textarea
@@ -218,7 +218,7 @@ const ProductEditScreen = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows="5"
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required
                 ></textarea>
               </div>
